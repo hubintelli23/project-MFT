@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · data/dialog.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · data/dialog.js · v0.4
    대사 · 안내 문구. n=말하는 사람, t=대사. */
 'use strict';
 const DIALOG={

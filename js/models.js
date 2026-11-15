@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · js/models.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · js/models.js · v0.4
    캐릭터·무기 3D 모델 (색상은 data/characters.js) */
 'use strict';
 /* ================= 캐릭터 모델 ================= */

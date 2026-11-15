@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · data/characters.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · data/characters.js · v0.4
    캐릭터 색상 · 크기. 색은 16진수(0xRRGGBB)로 적습니다.
    robe=옷  acc=허리띠  accE=허리띠 발광  hair=머리카락  eye=눈 */
 'use strict';

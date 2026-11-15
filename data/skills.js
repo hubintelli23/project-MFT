@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · data/skills.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · data/skills.js · v0.4
    연우의 공격 수치.
    dur=동작 시간(초)  hit=타격 순간(초)  range=사거리  half=좌우 판정 각도(도, 180=전방위)
    dmg=피해  lunge=앞으로 미끄러지는 거리  mark=낙인 부여 수  bloom=개화시킬 낙인 수

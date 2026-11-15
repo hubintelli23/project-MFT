@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · data/enemies.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · data/enemies.js · v0.4
    잡몹 · 보스 수치와 웨이브 구성. */
 'use strict';
 const ENEMIES={

@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · data/config.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · data/config.js · v0.4
    기본 수치 · 조작 키. 숫자만 바꿔도 게임에 바로 반영됩니다. */
 'use strict';
 const CONFIG={

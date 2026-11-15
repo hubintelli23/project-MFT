@@ -1,4 +1,4 @@
-/* MFT 인화순환록 · js/core.js · v0.3
+/* MFT 블루잉크 : 천년청묵 · js/core.js · v0.4
    기본 도구 · 렌더러 · 텍스처 · 배경 · 이펙트 */
 'use strict';
 const $=id=>document.getElementById(id);
