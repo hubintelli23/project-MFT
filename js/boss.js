@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/boss.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · js/boss.js · v0.6
    청류 보스 패턴 · 페이즈 · 인화 룬 */
 'use strict';
 /* ================= 보스 : 청류 ================= */
@@ -41,7 +41,7 @@ function aiBoss(b,dt){
   if(b.stance>0){b.stance-=dt;if(b.stance<=0){b.stun=1.3;banner('빈틈! 지금 공격하세요',1.4);}return;}
   if(b.action){runBossAction(b,dt);return;}
   const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz)||1;b.ang=lerpAng(b.ang,Math.atan2(dx,dz),1-Math.exp(-6*dt));
-  if(d>3.0){const sp=b.p2?BOSS.walkSpeedP2:BOSS.walkSpeed;b.x+=dx/d*sp*dt;b.z+=dz/d*sp*dt;b.walk+=dt*9;}
+  if(d>3.0){const sp=(b.p2?BOSS.walkSpeedP2:BOSS.walkSpeed)*slowMul(b);b.x+=dx/d*sp*dt;b.z+=dz/d*sp*dt;b.walk+=dt*9;}
   b.cd-=dt;if(b.cd<=0&&!P.dead)chooseBoss(b,d);}
 function animBoss(b,dt){const u=b.mesh.userData;let rx=-0.3+Math.sin(b.walk)*0.25,ry=0.2;const pending=strikes.some(s=>s.owner===b);
   if(b.swingT>0){const k=1-b.swingT/0.25;u.piv.rotation.x=-PI/2;u.piv.rotation.y=-1.6+3.2*k;}
@@ -73,7 +73,7 @@ function linkRune(rn){rn.linked=true;rn.mat.color.setHex(0x1a1a1a);rn.mat.emissi
 function breakRunes(){const b=boss;for(const r of runes){ringFx(r.x,r.z,0.5,4,0x141414,0.5);burst(r.x,1.5,r.z,0x141414,20,8,0.5);burst(r.x,1.5,r.z,0x7fd4ff,14,7,0.4);scene.remove(r.g);scene.remove(r.beam);lineFx(r.x,r.z,Math.atan2(b.x-r.x,b.z-r.z),Math.hypot(b.x-r.x,b.z-r.z),0.5,0x141414,0.5,1.4);}
   runes.length=0;waves.forEach(w=>{scene.remove(w.m);w.m.material.dispose();});waves.length=0;
   b.runeActive=false;b.runeDone=true;b.shield=0;b.stun=BOSS.brokenStun;b.broken=BOSS.brokenStun+1;b.action=null;b.stance=0;b.pulling=0;cancelStrikes(b);
-  showCut('파회 — 물길 붕괴');hitstop=0.25;shake(0.7);waterBurst(b.x,b.z);banner('청류 긴 기절! 받는 피해 150% — 지금 몰아치세요',4,'big');stats.runeBreak=1;}
+  showCut('파회 — 물길 붕괴');hitstop=0.25;shake(0.7);waterBurst(b.x,b.z);banner('청류 긴 기절! 받는 피해 150% — 지금 몰아치세요',4,'big');stats.runeBreak=1;spawnItem('yeongro',b.x+Math.sin(b.ang)*1.8,b.z+Math.cos(b.ang)*1.8);}
 function updateRunes(dt){if(!runes.length)return;for(const r of runes){r.cr.rotation.y+=dt*(r.linked?0.4:1.6);r.cr.position.y=1.5+Math.sin(state.time*2+r.x)*0.12;if(r.linked&&boss)setBeam(r.beam,r.x,1.5,r.z,boss.x,1.6,boss.z);}
   if(boss&&boss.runeActive&&!boss.dead){state.runeWaveT-=dt;if(state.runeWaveT<=0){state.runeWaveT=6;for(const r of runes)if(!r.linked){const m=new T.Mesh(flatGeo(new T.RingGeometry(0.88,1,64)),MB(0x7fd4ff,0.75));m.position.set(r.x,0.12,r.z);scene.add(m);waves.push({x:r.x,z:r.z,R:0.5,m,hit:false});}}}}
 function updateWaves(dt){for(let i=waves.length-1;i>=0;i--){if(i>=waves.length)continue;const w=waves[i];w.R+=7*dt;w.m.scale.setScalar(w.R);w.m.material.opacity=0.75*(1-w.R/12);

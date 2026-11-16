@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · data/skills.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · data/skills.js · v0.6
    연우의 공격 수치.
    dur=동작 시간(초)  hit=타격 순간(초)  range=사거리  half=좌우 판정 각도(도, 180=전방위)
    dmg=피해  lunge=앞으로 미끄러지는 거리  mark=낙인 부여 수  bloom=개화시킬 낙인 수
@@ -30,3 +30,25 @@ const STRONG={
 };
 // 스킬 쿨타임(초) — b1 만묵소진 · b2 묵향결쇄 · s1 점묵개화 · s2 유묵섬참
 const CD={b1:9,b2:6,s1:7,s2:10};
+
+/* ===== 연하 (피리 · 음파) =====  proj = 투사체 {n:개수, spread:퍼지는 각도, speed:속도, range:사거리, color:색}
+   slow = 둔화(초) */
+DEF.yeonha=[
+  {dur:0.36,hit:0.12,dmg:6,mark:1,proj:{n:1,speed:20,range:9,color:0xe0405a},swing:[-0.6,0.6]},            // 1타 적음
+  {dur:0.36,hit:0.12,dmg:6,mark:1,proj:{n:1,speed:20,range:9,color:0x4a8fe0},swing:[0.6,-0.6]},             // 2타 청음
+  {dur:0.42,hit:0.14,dmg:6,mark:1,proj:{n:2,spread:14,speed:20,range:9,color:0xe0405a},swing:[-0.6,0.6]},   // 3타 쌍음
+  {dur:0.56,hit:0.22,dmg:7,mark:1,slow:2,proj:{n:5,spread:50,speed:18,range:8,color:0xb070e0},swing:[-1,1]}]; // 4타 적청 쌍파
+AIR.yeonha={n:'공명 낙음',dur:0.4,hit:0.12,dmg:7,mark:1,air:true,proj:{n:3,spread:30,speed:20,range:8,color:0xb070e0},swing:[-0.6,0.6]};
+STRONG.yeonha={n:'오드아이 응시',dur:0.6,hit:0.28,range:7,half:28,dmg:8,mark:2,slow:3,vert:true,strong:true};
+
+/* ===== 매향 (은침 · 매화 진) =====  field = 발밑에 매화 진 설치 */
+DEF.maehyang=[
+  {dur:0.32,hit:0.1,dmg:6,bloom:1,proj:{n:1,speed:26,range:7.5,color:0xf2f2e8},swing:[-0.8,0.6]},          // 1타 은침
+  {dur:0.32,hit:0.1,dmg:6,bloom:1,proj:{n:1,speed:26,range:7.5,color:0xf2f2e8},swing:[0.8,-0.6]},          // 2타 은침
+  {dur:0.38,hit:0.12,dmg:6,bloom:1,proj:{n:3,spread:16,speed:26,range:7.5,color:0xf2f2e8},swing:[-0.8,0.8]},// 3타 삼침
+  {dur:0.52,hit:0.2,dmg:7,bloomAll:1,proj:{n:5,spread:40,speed:24,range:7,color:0x6fe0b8},swing:[-1.2,1.2]}];// 4타 매화 산침
+AIR.maehyang={n:'낙화침',dur:0.4,hit:0.12,dmg:6,bloom:1,air:true,proj:{n:4,spread:40,speed:24,range:7,color:0xf2f2e8},swing:[-0.8,0.8]};
+STRONG.maehyang={n:'대지 침술',dur:0.6,hit:0.3,range:3,half:180,dmg:9,bloom:1,field:true,vert:true,strong:true};
+
+// 쿨타임 — h1 적안·경고의 음 · h2 청안·균열 노출 · m1 매화혈맥진 · m2 생기 착근
+CD.h1=12;CD.h2=10;CD.m1=14;CD.m2=8;

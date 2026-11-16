@@ -1,9 +1,10 @@
-/* MFT 블루잉크 : 천년청묵 · js/ui.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · js/ui.js · v0.6
+   (v0.5: 지도 · 설정 · 새 조작 체계 추가)
    HUD · 대화창 · 입력(키보드·마우스·터치) */
 'use strict';
 /* ================= UI ================= */
 const nums=[];const _p=new T.Vector3();
-function popNum(x,y,z,text,cls){const el=document.createElement('div');el.className='num '+(cls||'');el.textContent=text;$('dmgLayer').appendChild(el);nums.push({el,x,y,z,t:0,life:cls==='info'?1.6:0.9});if(nums.length>45){nums.shift().el.remove();}}
+function popNum(x,y,z,text,cls){if(!SETTINGS.nums&&cls!=='info')return;const el=document.createElement('div');el.className='num '+(cls||'');el.textContent=text;$('dmgLayer').appendChild(el);nums.push({el,x,y,z,t:0,life:cls==='info'?1.6:0.9});if(nums.length>45){nums.shift().el.remove();}}
 function updateNums(dt){for(let i=nums.length-1;i>=0;i--){const n=nums[i];n.t+=dt;if(n.t>=n.life){n.el.remove();nums.splice(i,1);continue;}_p.set(n.x,n.y,n.z).project(camera);
   const sx=(_p.x*0.5+0.5)*innerWidth,sy=(-_p.y*0.5+0.5)*innerHeight-n.t*40;n.el.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-50%)`;n.el.style.opacity=Math.min(1,(n.life-n.t)/0.3);}}
 let bannerT=0,sayT=0;
@@ -18,16 +19,19 @@ function setS(id,prop,val){const key=id+prop;if(uiCache[key]===val)return;uiCach
 function setT(id,val){if(uiCache[id+'t']===val)return;uiCache[id+'t']=val;$(id).textContent=val;}
 function setH(id,val){if(uiCache[id+'h']===val)return;uiCache[id+'h']=val;$(id).innerHTML=val;}
 function setC(id,cls,on){const key=id+'c'+cls;if(uiCache[key]===on)return;uiCache[key]=on;$(id).classList.toggle(cls,on);}
-function updateUI(dt){
+const SKL={brush:['만묵소진','묵향결쇄'],sword:['점묵개화','유묵섬참'],yeonha:['적안<br>경고의 음','청안<br>균열 노출'],maehyang:['매화<br>혈맥진','생기<br>착근']};
+const ULTL={yeonwoo:'천지<br>수묵',yeonha:'쌍안<br>연화',maehyang:'대지<br>개화'};
+const BADGE={brush:'붓 모드',sword:'검 모드',yeonha:'피리',maehyang:'침술'};
+function updateUI(dt){updateInteractUI();updatePartyHud();
   setS('hpFill','width',(P.hp/P.maxHp*100).toFixed(1)+'%');setS('shFill','width',(P.shield/P.maxHp*100).toFixed(1)+'%');setT('hpTxt',Math.ceil(P.hp)+(P.shield>0.5?' +'+Math.floor(P.shield):''));
   setS('bkFill','width',P.baek.toFixed(1)+'%');setT('bkStage',P.stage>=4&&P.hwagT<=0?'4 영로 화경 · 침식':STAGE_NAME[P.stage]);
   setS('swFill','width',P.sw.toFixed(1)+'%');setC('swFill','full',P.sw>=100);
-  const brush=P.mode==='brush';setT('modeBadge',brush?'붓 모드':'검 모드');setC('modeBadge','sword',!brush);
-  setT('lS1',brush?'만묵소진':'점묵개화');setT('lS2',brush?'묵향결쇄':'유묵섬참');
-  setH('lSw',P.sw>=100?(brush?'진명<br>정화':'막묵<br>결계'):(brush?'전환<br>→검':'전환<br>→붓'));setC('bSw','ready',P.sw>=100);
+  const brush=P.mode==='brush',yw=P.char==='yeonwoo';setT('pName',CHARACTERS[P.char].name);setT('modeBadge',BADGE[P.mode]);setC('modeBadge','sword',P.mode==='sword');
+  setH('lS1',SKL[P.mode][0]);setH('lS2',SKL[P.mode][1]);setH('lUlt',ULTL[P.char]);setC('swRow','off',!yw);
+  setH('lSw',!yw?'전환<br>—':P.sw>=100?(brush?'진명<br>정화':'막묵<br>결계'):(brush?'전환<br>→검':'전환<br>→붓'));setC('bSw','ready',yw&&P.sw>=100);setC('bSw','dis',!yw);
   const cdSet=(id,v,max)=>setS(id,'height',(max>0?clamp(v/max,0,1)*100:0).toFixed(0)+'%');
   const q=document.querySelector.bind(document);
-  cdSet2('bS1',P.cds[(brush?'b':'s')+'1'],CD[(brush?'b':'s')+'1']);cdSet2('bS2',P.cds[(brush?'b':'s')+'2'],CD[(brush?'b':'s')+'2']);cdSet2('bDodge',Math.max(0,P.dodgeCd),1.1);
+  cdSet2('bDash',P.cds.dash,CONFIG.player.dashCd);cdSet2('bS1',P.cds[skillId(1)],CD[skillId(1)]);cdSet2('bS2',P.cds[skillId(2)],CD[skillId(2)]);cdSet2('bDodge',Math.max(0,P.dodgeCd),1.1);
   const f=Math.floor(P.ult)+'%';if(uiCache.ult!==f){uiCache.ult=f;$('bUlt').style.setProperty('--f',f);}setC('bUlt','ready',P.ult>=100);
   if(boss){setS('bhpFill','width',(Math.max(0,boss.hp)/boss.maxHp*100).toFixed(1)+'%');setS('bshFill','width',(boss.shield/boss.maxHp*100).toFixed(1)+'%');
     const pips=$('bpips').children;for(let i=0;i<5;i++)setC2(pips[i],i<boss.stacks);
@@ -46,26 +50,41 @@ function advanceDialog(){if(performance.now()-dlgLast<220)return;if(dlgQ.length)
 $('dialog').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();advanceDialog();});
 
 /* ================= 입력 ================= */
-const input={mx:0,mz:0,mag:0,atkHeld:false,keys:{}};
+const input={mx:0,mz:0,mag:0,keys:{}};
 const joy={id:null,ox:0,oy:0,x:0,y:0};
-function press(q){if(!state.running||state.paused)return;if(dialogOpen){advanceDialog();return;}if(P.dead||state.win)return;if(!ready(q)){flashBtn(q);}P.queue=q;P.queueT=0.35;}
-const BTN={atk:'bAtk',str:'bAtk',jump:'bJump',s1:'bS1',s2:'bS2',dodge:'bDodge',sw:'bSw',ult:'bUlt'};
+function press(q){if(!state.running||state.paused||state.mapOpen)return;if(dialogOpen){advanceDialog();return;}if(P.dead||state.win)return;
+  if(q==='interact'){if(!interact())flashBtn(q);return;}
+  if(!ready(q)){flashBtn(q);}P.queue=q;P.queueT=0.35;}
+const BTN={atk:'bAtk',str:'bAtk',jump:'bJump',s1:'bS1',s2:'bS2',dodge:'bDodge',dash:'bDash',sw:'bSw',ult:'bUlt',interact:'bInt'};
 function flashBtn(q){const el=$(BTN[q]);if(!el)return;el.classList.remove('no');void el.offsetWidth;el.classList.add('no');}
-function bindBtn(id,q,hold){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.classList.add('down');if(hold)input.atkHeld=!dialogOpen;press(q);});
-  const up=()=>{el.classList.remove('down');if(hold)input.atkHeld=false;};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);el.addEventListener('contextmenu',e=>e.preventDefault());}
-const HOLD_T=CONFIG.holdTime;const atkHold={down:false,t:0,fired:false};
-function atkDown(){if(dialogOpen){advanceDialog();return;}if(!state.running||state.paused)return;atkHold.down=true;atkHold.t=0;atkHold.fired=false;}
+function bindBtn(id,q){const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.classList.add('down');press(q);});
+  const up=()=>el.classList.remove('down');el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);el.addEventListener('contextmenu',e=>e.preventDefault());}
+/* 공격 입력: 짧게 = 공격 · HOLD_T초 이상 = 강공격 · 공중 + 점프 강공격 키(Ctrl) = 점프 강공격 */
+const HOLD_T=CONFIG.holdTime;const atkHold={down:false,t:0,fired:false,src:'mouse'};
+const isAir=()=>P&&P.y>0.05;
+const ctrlHeld=()=>CONFIG.keys.jumpStrong.some(k=>input.keys[k]);
+function atkDown(src,ctrl){if(dialogOpen){advanceDialog();return;}if(!state.running||state.paused||state.mapOpen)return;atkHold.down=true;atkHold.t=0;atkHold.fired=false;atkHold.src=src;
+  if(ctrl&&isAir()){atkHold.fired=true;press('str');}}
 function atkUp(){if(!atkHold.down)return;atkHold.down=false;if(!atkHold.fired)press('atk');}
-function updateHold(dt){if(atkHold.down&&!atkHold.fired){atkHold.t+=dt;if(atkHold.t>=HOLD_T){atkHold.fired=true;press('str');}}}
-{const el=$('bAtk');el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.classList.add('down');atkDown();});const up=()=>{el.classList.remove('down');atkUp();};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);el.addEventListener('contextmenu',e=>e.preventDefault());}
-bindBtn('bJump','jump');bindBtn('bS1','s1');bindBtn('bS2','s2');bindBtn('bDodge','dodge');bindBtn('bSw','sw');bindBtn('bUlt','ult');
-const KMAP={};{const K=CONFIG.keys;KMAP[K.skill1]='s1';KMAP[K.skill2]='s2';KMAP[K.ult]='ult';KMAP[K.switch]='sw';KMAP[K.jump]='jump';for(const k of K.dodge)KMAP[k]='dodge';}
-const ATK_KEY=CONFIG.keys.attack;
-addEventListener('keydown',e=>{const k=e.code;if(dialogOpen&&(k==='Space'||k==='Enter'||k===ATK_KEY)){e.preventDefault();if(!e.repeat)advanceDialog();return;}
-  input.keys[k]=true;if(k==='Escape'||k==='KeyP'){togglePause();return;}if(KMAP[k]||k===ATK_KEY)e.preventDefault();if(e.repeat)return;if(k===ATK_KEY)atkDown();if(KMAP[k]){e.preventDefault();press(KMAP[k]);}});
-addEventListener('keyup',e=>{input.keys[e.code]=false;if(e.code===ATK_KEY)atkUp();});
+function updateHold(dt){if(atkHold.down&&!atkHold.fired){atkHold.t+=dt;if(atkHold.t>=HOLD_T){atkHold.fired=true;
+  if(isAir())press(atkHold.src==='touch'?'str':'atk');else press('str');}}}
+{const el=$('bAtk');el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();el.classList.add('down');atkDown('touch',false);});const up=()=>{el.classList.remove('down');atkUp();};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);el.addEventListener('contextmenu',e=>e.preventDefault());}
+bindBtn('bJump','jump');bindBtn('bS1','s1');bindBtn('bS2','s2');bindBtn('bDodge','dodge');bindBtn('bDash','dash');bindBtn('bSw','sw');bindBtn('bUlt','ult');bindBtn('bInt','interact');
+const KMAP={};{const K=CONFIG.keys;KMAP[K.skill1]='s1';KMAP[K.skill2]='s2';KMAP[K.ult]='ult';KMAP[K.switch]='sw';KMAP[K.jump]='jump';KMAP[K.interact]='interact';for(const k of K.dodge)KMAP[k]='dodge';}
+addEventListener('keydown',e=>{const k=e.code,K=CONFIG.keys;
+  if(k===K.settings){e.preventDefault();if(state.mapOpen)toggleMap();else if(!dialogOpen)togglePause();return;}
+  if(dialogOpen&&(k==='Space'||k==='Enter')){e.preventDefault();if(!e.repeat)advanceDialog();return;}
+  input.keys[k]=true;
+  if(KMAP[k]||k==='Tab'||K.jumpStrong.includes(k)||K.swap.includes(k))e.preventDefault();
+  if(e.repeat)return;
+  if(k===K.map){toggleMap();return;}
+  if(K.jumpStrong.includes(k)&&atkHold.down&&!atkHold.fired&&isAir()){atkHold.fired=true;press('str');return;}
+  const si=K.swap.indexOf(k);if(si>=0){e.preventDefault();trySwap(si);return;}
+  if(KMAP[k])press(KMAP[k]);});
+addEventListener('keyup',e=>{input.keys[e.code]=false;});
 addEventListener('blur',()=>{input.keys={};atkHold.down=false;});
-renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;if(dialogOpen){advanceDialog();return;}if(e.button===0)atkDown();});
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse')return;if(dialogOpen){advanceDialog();return;}
+  if(e.button===0)atkDown('mouse',e.ctrlKey||ctrlHeld());else if(e.button===2)press('dash');});
 addEventListener('pointerup',e=>{if(e.pointerType==='mouse'&&e.button===0)atkUp();});
 renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
 const zone=$('joyZone'),jb=$('joyBase'),jk=$('joyKnob');
@@ -75,3 +94,27 @@ const jend=e=>{if(e.pointerId!==joy.id)return;joy.id=null;joy.x=joy.y=0;jb.style
 zone.addEventListener('pointerup',jend);zone.addEventListener('pointercancel',jend);
 function readMove(){let mx=0,mz=0;if(joy.id!==null){mx=joy.x;mz=joy.y;}else{const K=input.keys;mx=(K.KeyD||K.ArrowRight?1:0)-(K.KeyA||K.ArrowLeft?1:0);mz=(K.KeyS||K.ArrowDown?1:0)-(K.KeyW||K.ArrowUp?1:0);const m=Math.hypot(mx,mz);if(m>1){mx/=m;mz/=m;}}
   const m=Math.hypot(mx,mz);input.mx=m<0.15?0:mx;input.mz=m<0.15?0:mz;input.mag=m<0.15?0:Math.min(1,m);}
+
+/* ================= 지도 (M) ================= */
+function toggleMap(){if(!state.running||state.over||state.win||state.paused||dialogOpen)return;state.mapOpen=!state.mapOpen;$('mapScr').hidden=!state.mapOpen;if(state.mapOpen)drawMap();}
+function drawMap(){const cv=$('mapCv'),g=cv.getContext('2d'),W=cv.width,c=W/2,s=(W/2-16)/(ARENA+1);const X=x=>c+x*s,Y=z=>c+z*s;
+  g.clearRect(0,0,W,W);g.fillStyle='#e9e3d5';g.beginPath();g.arc(c,c,(ARENA+1)*s,0,TAU);g.fill();
+  g.strokeStyle='#1a1816';g.lineWidth=6;g.beginPath();g.arc(c,c,(ARENA+0.6)*s,0,TAU);g.stroke();
+  for(const d of decals){g.fillStyle='rgba(63,174,140,.25)';g.beginPath();g.arc(X(d.m.position.x),Y(d.m.position.z),d.r*s*0.8,0,TAU);g.fill();}
+  for(const p of puddles){g.fillStyle='rgba(90,14,22,.55)';g.beginPath();g.arc(X(p.x),Y(p.z),p.r*s,0,TAU);g.fill();}
+  for(const it of items){const D=ITEMS[it.type];g.fillStyle='#'+D.color.toString(16).padStart(6,'0');g.strokeStyle='#1a1816';g.lineWidth=2;g.beginPath();g.arc(X(it.x),Y(it.z),7,0,TAU);g.fill();g.stroke();}
+  for(const r of runes){g.fillStyle=r.linked?'#1a1816':'#7fd4ff';g.save();g.translate(X(r.x),Y(r.z));g.rotate(PI/4);g.fillRect(-8,-8,16,16);g.restore();}
+  for(const e of enemies){if(e.dead)continue;const boss_=e.type==='boss';g.fillStyle=boss_?'#2b6b8a':'#b3242f';g.beginPath();g.arc(X(e.x),Y(e.z),boss_?14:8,0,TAU);g.fill();if(boss_){g.fillStyle='#fff';g.font='bold 14px sans-serif';g.textAlign='center';g.fillText('청류',X(e.x),Y(e.z)-20);}}
+  g.save();g.translate(X(P.x),Y(P.z));g.rotate(-P.ang+PI);g.fillStyle='#3fae8c';g.strokeStyle='#141414';g.lineWidth=3;g.beginPath();g.moveTo(0,-16);g.lineTo(11,11);g.lineTo(-11,11);g.closePath();g.fill();g.stroke();g.restore();
+  g.fillStyle='#1a1816';g.font='bold 16px sans-serif';g.textAlign='center';g.fillText('청옥림',c,26);}
+$('mapScr').addEventListener('pointerdown',e=>{e.preventDefault();toggleMap();});
+$('mapBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleMap();});
+
+/* ================= 설정 (Esc) ================= */
+const SETTINGS={shake:true,nums:true,hq:true};
+try{Object.assign(SETTINGS,JSON.parse(localStorage.getItem('blueink-settings')||'{}'));}catch(_){}
+function applySettings(){renderer.setPixelRatio(SETTINGS.hq?Math.min(window.devicePixelRatio||1,isTouch?1.5:2):1);renderer.setSize(innerWidth,innerHeight);
+  document.querySelectorAll('.tg').forEach(b=>{const on=SETTINGS[b.dataset.k];b.textContent=b.dataset.k==='hq'?(on?'높음':'낮음'):(on?'켜기':'끄기');b.classList.toggle('on',on);});
+  try{localStorage.setItem('blueink-settings',JSON.stringify(SETTINGS));}catch(_){}}
+document.querySelectorAll('.tg').forEach(b=>b.addEventListener('click',()=>{SETTINGS[b.dataset.k]=!SETTINGS[b.dataset.k];applySettings();}));
+applySettings();

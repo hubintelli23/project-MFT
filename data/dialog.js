@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · data/dialog.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · data/dialog.js · v0.6
    대사 · 안내 문구. n=말하는 사람, t=대사. */
 'use strict';
 const DIALOG={
@@ -14,6 +14,8 @@ const DIALOG={
   ],
   runePhase:{n:'연하',t:'오빠! 저 푸른 빛이 시간을 얽매고 있어! 붓이 안 된다면 검으로 궤적을 베어내야 해!'},
   yeonhaRescue:{n:'연하',t:'오빠, 정신 차려! …내가 붙잡고 있을게.'},
+  maeIntervene:{n:'매향',t:'도련님, 잠시 물러서십시오!'},
+  swapLines:{yeonwoo:'먹선을 잇는다.',yeonha:'오빠, 내 소리를 들어!',maehyang:'대지에 뿌리를 내리겠습니다.'},
   bossApproach:'청옥림의 수호자가 다가온다…',
   bossStart:'가주급 보스전 — 청류 · 청류의 수호신',
   nameColors:{'연우':'#1f8a68','청류':'#1f5a80','매향':'#8a5a6e','연하':'#b23a5a'},

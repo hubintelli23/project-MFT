@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/models.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · js/models.js · v0.6
    캐릭터·무기 3D 모델 (색상은 data/characters.js) */
 'use strict';
 /* ================= 캐릭터 모델 ================= */
@@ -18,8 +18,8 @@ function makeHuman(c){
   const piv=new T.Group();piv.position.set(0.34,1.7,0);piv.rotation.order='YXZ';g.add(piv);p.piv=piv;
   add(new T.CylinderGeometry(0.07,0.08,0.62,6),p.robe,0,-0.31,0,true,piv);
   const hand=new T.Group();hand.position.y=-0.62;piv.add(hand);p.hand=hand;
-  const eyeM=new T.MeshBasicMaterial({color:c.eye||0x111111});
-  add(new T.SphereGeometry(0.035,6,6),eyeM,-0.08,2.0,0.2,false);add(new T.SphereGeometry(0.035,6,6),eyeM,0.08,2.0,0.2,false);
+  const eyeL=new T.MeshBasicMaterial({color:c.eyeL||c.eye||0x111111}),eyeR=new T.MeshBasicMaterial({color:c.eyeR||c.eye||0x111111});
+  add(new T.SphereGeometry(0.035,6,6),eyeL,-0.08,2.0,0.2,false);add(new T.SphereGeometry(0.035,6,6),eyeR,0.08,2.0,0.2,false);
   g.userData=p;return g;
 }
 function makeBrush(){const g=new T.Group();const sh=new T.Mesh(new T.CylinderGeometry(0.035,0.045,1.05,6),lam(0x6b4a2e));sh.position.y=-0.45;g.add(sh);const band=new T.Mesh(new T.CylinderGeometry(0.055,0.055,0.08,8),lam(0x3fae8c,0x1d5a48));band.position.y=-0.95;g.add(band);const tip=new T.Mesh(new T.ConeGeometry(0.08,0.34,8),lam(0x151515));tip.rotation.x=PI;tip.position.y=-1.15;g.add(tip);const jt=new T.Mesh(new T.SphereGeometry(0.05,6,6),new T.MeshBasicMaterial({color:0x6fe0b8}));jt.position.y=-1.3;g.add(jt);return g;}

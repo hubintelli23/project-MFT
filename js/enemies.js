@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v0.4
+/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v0.6
    적 공통 · 잡몹 AI · 공격 판정 · 투사체 */
 'use strict';
 /* ================= 적 공통 ================= */
@@ -31,7 +31,7 @@ function clampArena(o,r){const d=Math.hypot(o.x,o.z),m=ARENA-0.4-r*0.5;if(d>m){o
 /* ================= 적 업데이트 ================= */
 function updateEnemy(e,dt){
   if(e.dead){if(e.type==='boss')return;e.dying-=dt;e.mesh.scale.setScalar(Math.max(0.01,e.dying/0.4));if(e.dying<=0){scene.remove(e.mesh);e.removed=true;}return;}
-  e.t+=dt;e.root-=dt;e.flash-=dt;
+  e.t+=dt;e.root-=dt;e.flash-=dt;if(e.slow>0)e.slow-=dt;if(e.vuln>0){e.vuln-=dt;if(e.vulnM){e.vulnM.visible=e.vuln>0;e.vulnM.position.set(e.x,(e.y||0)+(e.type==='boss'?3.4:2.2),e.z);}}
   if(e.stacks>0){e.stackT-=dt;if(e.stackT<=0){e.stacks=0;e.barDirty=true;}}
   if(e.type!=='boss'){e.stun-=dt;e.x+=e.kx*dt;e.z+=e.kz*dt;const k=Math.exp(-7*dt);e.kx*=k;e.kz*=k;
     if(e.pull){e.pull.t-=dt;const dx=e.pull.x-e.x,dz=e.pull.z-e.z,d=Math.hypot(dx,dz);if(d>0.3){const v=Math.min(d,d/Math.max(e.pull.t,0.05)*dt);e.x+=dx/d*v;e.z+=dz/d*v;}if(e.pull.t<=0)e.pull=null;}}
@@ -51,11 +51,11 @@ function aiRusher(e,dt){const tg=clones.length?clones[0]:P;const dx=tg.x-e.x,dz=
   e.ang=lerpAng(e.ang,Math.atan2(dx,dz),1-Math.exp(-10*dt));
   if(e.root>0||e.stun>0||e.lift>0)return;
   if(d<1.35){e.fuse=ENEMIES.rusher.fuseTime;return;}
-  const sp=ENEMIES.rusher.speed*(e.stacks>=3?0.85:1);e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;e.body.rotation.x+=dt*8;}
+  const sp=ENEMIES.rusher.speed*(e.stacks>=3?0.85:1)*slowMul(e);e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;e.body.rotation.x+=dt*8;}
 function rusherExplode(e){const o={kind:'circle',x:e.x,z:e.z,r:ENEMIES.rusher.explodeRadius};if(P.y<1.0&&inShape(o,P.x,P.z))hurtPlayer(ENEMIES.rusher.explodeDamage);for(const c of clones)if(Math.hypot(c.x-e.x,c.z-e.z)<2.5)c.t=0;
   burst(e.x,0.8,e.z,0x3a0a10,18,7,0.55);burst(e.x,0.8,e.z,0x141414,12,6,0.5);ringFx(e.x,e.z,0.5,2.3,0x8a1520,0.4);shake(0.25);killE(e,true);}
 function aiEater(e,dt){const dx=P.x-e.x,dz=P.z-e.z,d=Math.hypot(dx,dz)||1;e.ang=lerpAng(e.ang,Math.atan2(dx,dz),1-Math.exp(-6*dt));
-  if(e.root<=0&&e.stun<=0){let mv=0;if(d<5.5)mv=-1;else if(d>8.5)mv=1;const sp=ENEMIES.eater.speed*(e.stacks>=3?0.85:1);e.x+=dx/d*mv*sp*dt;e.z+=dz/d*mv*sp*dt;const s=Math.sin(e.t*0.7)*1.2*dt;e.x+=-dz/d*s;e.z+=dx/d*s;}
+  if(e.root<=0&&e.stun<=0){let mv=0;if(d<5.5)mv=-1;else if(d>8.5)mv=1;const sp=ENEMIES.eater.speed*(e.stacks>=3?0.85:1)*slowMul(e);e.x+=dx/d*mv*sp*dt;e.z+=dz/d*mv*sp*dt;const s=Math.sin(e.t*0.7)*1.2*dt;e.x+=-dz/d*s;e.z+=dx/d*s;}
   e.shootT-=dt;if(e.shootT<=0&&d<14&&e.stun<=0){e.shootT=rand(ENEMIES.eater.shootInterval[0],ENEMIES.eater.shootInterval[1]);shootOrb(e);}}
 function shootOrb(e){const m=new T.Mesh(new T.SphereGeometry(0.28,10,8),new T.MeshBasicMaterial({color:0x3a0a10}));const gl=new T.Sprite(new T.SpriteMaterial({map:dotTex,color:0xc0303a,transparent:true,depthWrite:false}));gl.scale.set(1.1,1.1,1);m.add(gl);
   const a=Math.atan2(P.x-e.x,P.z-e.z),sp=ENEMIES.eater.orbSpeed,ft=Math.max(0.3,dist2(P,e)/sp);m.position.set(e.x,e.y,e.z);scene.add(m);
@@ -76,7 +76,12 @@ function updateStrikes(dt){for(let i=strikes.length-1;i>=0;i--){if(i>=strikes.le
 
 /* ================= 투사체/웅덩이/분신/영역 ================= */
 function removeProj(i){const p=projs[i];scene.remove(p.m);disposeObj(p.m,true);projs.splice(i,1);}
+function slowMul(e){return e.slow>0?(e.type==='boss'?0.7:0.5):1;}
 function updateProj(dt){for(let i=projs.length-1;i>=0;i--){const p=projs[i];p.t+=dt;
+  if(p.straight){p.x+=p.vx*dt;p.z+=p.vz*dt;p.m.position.set(p.x,p.y,p.z);let hit=null;for(const e of enemies){if(!e.dead&&Math.hypot(e.x-p.x,e.z-p.z)<e.r+0.25){hit=e;break;}}
+    if(hit){const r=pdmg(p.def.dmg,p.def.critAdd||0);if(dealE(hit,r.v,r.crit,'ranged')&&!hit.dead)applyDef(hit,p.def);burst(p.x,p.y,p.z,p.def.proj.color,5,4,0.3,0.35);hitstop=Math.max(hitstop,0.02);removeProj(i);continue;}
+    for(const rn of runes)if(!rn.linked&&Math.hypot(rn.x-p.x,rn.z-p.z)<rn.r+0.3){runeHint(rn);p.t=p.life;}
+    if(p.t>=p.life||Math.hypot(p.x,p.z)>ARENA+1)removeProj(i);continue;}
   if(p.player){const t=p.tgt;if(!t||t.dead){removeProj(i);continue;}const ty=(t.y||0)+1,dx=t.x-p.x,dz=t.z-p.z,dy=ty-p.y,d=Math.hypot(dx,dy,dz);
     if(d<0.7){const r=pdmg(6);if(dealE(t,r.v,r.crit,'ranged')&&!t.dead&&t.stacks)bloom(t,t.stacks,1);burst(p.x,p.y,p.z,0xe8fff4,10,6,0.35);removeProj(i);continue;}
     const s=Math.min(1,p.speed*dt/d);p.x+=dx*s;p.z+=dz*s;p.y+=dy*s;p.m.position.set(p.x,p.y,p.z);p.m.lookAt(t.x,ty,t.z);continue;}

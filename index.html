@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MFT 블루잉크 : 천년청묵 · index.html · v0.4
+<!-- MFT 블루잉크 : 천년청묵 · index.html · v0.6
      화면 뼈대만 담고, 실제 내용은 css/ · data/ · js/ 폴더의 파일에서 불러옵니다. -->
 <html lang="ko">
 <head>
@@ -8,7 +8,7 @@
 <title>블루잉크 : 천년청묵 — 전투 체험판</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.4">
+<link rel="stylesheet" href="css/style.css?v=0.6">
 </head>
 <body>
 <div id="game"></div>
@@ -17,11 +17,12 @@
 <div id="dmgLayer"></div>
 
 <div id="phud" class="hud">
-  <div class="pname">연우 <span id="modeBadge">붓 모드</span></div>
+  <div class="pname"><span id="pName">연우</span> <span id="modeBadge">붓 모드</span></div>
   <div class="bar"><div id="hpFill"></div><div id="shFill"></div><span id="hpTxt"></span></div>
   <div class="grow"><span class="gl">백묵화</span><div class="bar" id="bkBar"><div id="bkFill"></div><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></div><span id="bkStage">0단계</span></div>
-  <div class="grow"><span class="gl">전환</span><div class="bar"><div id="swFill"></div></div></div>
+  <div class="grow" id="swRow"><span class="gl">전환</span><div class="bar"><div id="swFill"></div></div></div>
 </div>
+<div id="party" class="hud"></div>
 <div id="bhud" class="hud" hidden>
   <div class="bname">청류 <small>청매 가주 · 청류의 수호신</small></div>
   <div class="bar" style="height:13px"><div id="bhpFill"></div><div id="bshFill"></div></div>
@@ -32,18 +33,22 @@
 <div id="skill" class="hud"></div>
 <div id="say" class="hud"><b id="sayN"></b><span id="sayT"></span></div>
 <div id="cut"><span id="cutT"></span></div>
-<button id="pauseBtn" aria-label="일시정지">Ⅱ</button>
+<button id="pauseBtn" aria-label="설정">≡</button>
+<button id="mapBtn" aria-label="지도">地</button>
+<div id="interact" class="hud" hidden><b>F</b> <span id="intTxt"></span></div>
 
 <div id="joyZone"></div>
 <div id="joyBase"><div id="joyKnob"></div></div>
 <div id="pad">
-  <button class="cb" id="bAtk" style="--s:88px;--r:22px;--b:24px"><div class="cd"></div><span id="lAtk">공격</span><em>C·클릭</em><em class="sub">꾹 = 강공격</em></button>
+  <button class="cb" id="bAtk" style="--s:88px;--r:22px;--b:24px"><div class="cd"></div><span id="lAtk">공격</span><em>좌클릭</em><em class="sub">꾹 = 강공격</em></button>
   <button class="cb" id="bJump" style="--s:56px;--r:128px;--b:40px"><div class="cd"></div><span>점프</span><em>Space</em></button>
   <button class="cb" id="bS1"  style="--s:56px;--r:114px;--b:104px"><div class="cd"></div><span id="lS1">만묵소진</span><em>Q</em></button>
   <button class="cb" id="bS2"  style="--s:56px;--r:72px;--b:150px"><div class="cd"></div><span id="lS2">묵향결쇄</span><em>E</em></button>
   <button class="cb" id="bDodge" style="--s:58px;--r:12px;--b:162px"><div class="cd"></div><span>회피</span><em>Shift</em></button>
-  <button class="cb" id="bSw"  style="--s:58px;--r:200px;--b:26px"><div class="cd"></div><span id="lSw">전환<br>→검</span><em>F</em></button>
-  <button class="cb" id="bUlt" style="--s:60px;--r:150px;--b:178px;--f:0%"><div class="cd"></div><span>천지<br>수묵</span><em>R</em></button>
+  <button class="cb" id="bDash" style="--s:52px;--r:198px;--b:98px"><div class="cd"></div><span>대쉬</span><em>우클릭</em></button>
+  <button class="cb" id="bInt" style="--s:54px;--r:26px;--b:238px" hidden><div class="cd"></div><span>줍기</span><em>F</em></button>
+  <button class="cb" id="bSw"  style="--s:58px;--r:200px;--b:26px"><div class="cd"></div><span id="lSw">전환<br>→검</span><em>Tab</em></button>
+  <button class="cb" id="bUlt" style="--s:60px;--r:150px;--b:178px;--f:0%"><div class="cd"></div><span id="lUlt">천지<br>수묵</span><em>R</em></button>
 </div>
 
 <div id="dialog" hidden><div id="dlgN"></div><div id="dlgT"></div><div class="dnext">터치하여 계속 ▼</div></div>
@@ -56,19 +61,33 @@
   <p class="tdesc">붓으로 먹선 낙인을 새기고, 검으로 베어 개화시켜라.<br>탁기를 정화할수록 백묵화가 깊어진다.</p>
   <button id="startBtn" class="big">순례 시작</button>
   <div class="howto">
-    <div><b>키보드·마우스</b>WASD 이동 · C / 좌클릭 공격 · 좌클릭(C) 꾹 = 강공격 · Space 점프 · 공중에서 좌클릭 = 점프 공격 · 공중에서 꾹 = 점프 강공격 · Q·E 스킬 · F 붓/검 전환 · R 궁극기 · Shift 회피</div>
-    <div><b>터치</b>왼쪽 화면을 끌어서 이동 · 공격 버튼 탭 = 공격, 꾹 = 강공격 · 점프 후 공격 버튼 = 점프 공격</div>
+    <div><b>키보드·마우스</b>WASD 이동 · Shift 회피 · 우클릭 대쉬 · 좌클릭 공격 · 좌클릭 꾹(0.5초) 강공격 · Space 점프 · 공중에서 좌클릭 점프 공격 · 공중에서 Ctrl+좌클릭 점프 강공격 · Q·E 스킬 · R 궁극기 · Tab 붓/검 전환(연우) · 1·2·3 교대(연우·연하·매향) · F 아이템 줍기 · M 지도 · Esc 설정</div>
+    <div><b>터치</b>왼쪽 화면을 끌어서 이동 · 공격 버튼 탭 = 공격, 꾹 = 강공격 · 점프 후 공격 = 점프 공격, 점프 후 꾹 = 점프 강공격 · 왼쪽 파티 칸을 누르면 교대</div>
     <div><b>딜링 루프</b>붓으로 낙인 3~5중첩 → 검으로 전환해 개화(폭발) → 방어막·백묵화 게이지 충전</div>
-    <div><b>역린공명</b>검 모드에서 적의 공격이 닿기 직전에 회피하면 반격 · 점프로 지면 공격과 룬 물결을 넘을 수 있음</div>
+    <div><b>역린공명</b>검 모드에서 적의 공격이 닿기 직전에 회피(Shift)하면 반격 · 대쉬는 더 멀리 가지만 무적이 없음</div>
   </div>
   <div class="tnote">가로 화면을 권장합니다 · 휴대폰에서 소리는 나오지 않습니다</div>
 </div></div>
 
 <div id="pauseScr" class="screen" hidden><div class="tbox">
-  <h2>일시정지</h2>
-  <div id="verList" style="font-size:10px;opacity:.6;margin-top:6px;line-height:1.6"></div>
-  <div style="margin-top:20px"><button id="resumeBtn" class="big">계속하기</button><button id="restartBtn" class="big alt">처음부터</button></div>
+  <h2>설정</h2>
+  <div class="opts">
+    <div class="opt"><span>화면 흔들림</span><button class="tg" data-k="shake"></button></div>
+    <div class="opt"><span>피해 숫자 표시</span><button class="tg" data-k="nums"></button></div>
+    <div class="opt"><span>그래픽 품질</span><button class="tg" data-k="hq"></button></div>
+  </div>
+  <div class="howto keys">
+    <div><b>이동 · 회피</b>WASD · Shift 회피 · 우클릭 대쉬</div>
+    <div><b>공격</b>좌클릭 공격 · 꾹 0.5초 강공격</div>
+    <div><b>점프</b>Space 점프 · 공중 좌클릭 점프 공격 · 공중 Ctrl+좌클릭 점프 강공격</div>
+    <div><b>기술</b>Q·E 스킬 · R 궁극기 · Tab 붓/검 전환(연우)</div>
+    <div><b>교대</b>1 연우 · 2 연하 · 3 매향 (교대 진입 공격 · 쓰러지면 자동 교대)</div>
+    <div><b>기타</b>F 아이템 줍기 · M 지도 · Esc 설정</div>
+  </div>
+  <div id="verList" style="font-size:10px;opacity:.6;margin-top:8px;line-height:1.6"></div>
+  <div style="margin-top:16px"><button id="resumeBtn" class="big">계속하기</button><button id="restartBtn" class="big alt">처음부터</button></div>
 </div></div>
+<div id="mapScr" hidden><canvas id="mapCv" width="560" height="560"></canvas><div class="mapHint">M 또는 화면을 눌러 닫기</div></div>
 
 <div id="result" class="screen" hidden><div class="tbox">
   <h2 id="resTitle"></h2>
@@ -81,19 +100,22 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <!-- 수정한 파일의 버전을 올릴 때 아래 ?v= 값도 같이 올리면, 휴대폰 브라우저가 예전 파일을 쓰지 않습니다. -->
-<script src="js/version.js?v=0.4"></script>
-<script src="data/config.js?v=0.4"></script>
-<script src="data/skills.js?v=0.4"></script>
-<script src="data/characters.js?v=0.4"></script>
+<script src="js/version.js?v=0.6"></script>
+<script src="data/config.js?v=0.6"></script>
+<script src="data/skills.js?v=0.6"></script>
+<script src="data/characters.js?v=0.6"></script>
 <script src="data/enemies.js?v=0.4"></script>
-<script src="data/dialog.js?v=0.4"></script>
+<script src="data/dialog.js?v=0.6"></script>
+<script src="data/items.js?v=0.5"></script>
 <script src="js/core.js?v=0.4"></script>
-<script src="js/models.js?v=0.4"></script>
-<script src="js/state.js?v=0.4"></script>
-<script src="js/player.js?v=0.4"></script>
-<script src="js/enemies.js?v=0.4"></script>
-<script src="js/boss.js?v=0.4"></script>
-<script src="js/ui.js?v=0.4"></script>
-<script src="js/main.js?v=0.4"></script>
+<script src="js/models.js?v=0.6"></script>
+<script src="js/state.js?v=0.6"></script>
+<script src="js/player.js?v=0.6"></script>
+<script src="js/enemies.js?v=0.6"></script>
+<script src="js/boss.js?v=0.6"></script>
+<script src="js/party.js?v=0.6"></script>
+<script src="js/items.js?v=0.5"></script>
+<script src="js/ui.js?v=0.6"></script>
+<script src="js/main.js?v=0.6"></script>
 </body>
 </html>
