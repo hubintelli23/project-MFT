@@ -1,13 +1,13 @@
-/* MFT 블루잉크 : 천년청묵 · js/player.js · v0.6
+/* MFT 블루잉크 : 천년청묵 · js/player.js · v0.8
    연우의 행동 · 스킬 · 전환 · 점프 · 궁극기 */
 'use strict';
 /* ================= 플레이어 수치 ================= */
 function stageOf(){return P.baek>=100?4:Math.floor(P.baek/25);}
 function skillId(k){return P.char==='yeonha'?'h'+k:P.char==='maehyang'?'m'+k:(P.mode==='brush'?'b':'s')+k;}
 function atkSpd(){return(P.stage>=3?1.25:1)*(P.critBuff>0?1.15:1);}
-function pdmg(base,critAdd=0){let m=1;if(P.stage>=4)m*=1.3;const cc=0.08+critAdd+(P.stage>=2?0.2:0)+(P.critBuff>0?0.35:0);let crit=Math.random()<cc||P.maeBuff>0;if(PARTY.critNext&&P.char==='yeonwoo'&&P.mode==='sword'){crit=true;PARTY.critNext=false;popNum(P.x,2.6,P.z,'적청인과 — 확정 치명타','info');}return{v:base*m*(crit?1.7:1)*rand(0.92,1.08),crit};}
+function pdmg(base,critAdd=0){let m=1;if(P.stage>=4)m*=1.3;if(P.nokgi>0&&P.char==='yeonwoo')m*=CONFIG.nokgi.damageMul;const cc=0.08+critAdd+(P.stage>=2?0.2:0)+(P.critBuff>0?0.35:0);let crit=Math.random()<cc||P.maeBuff>0;if(PARTY.critNext&&P.char==='yeonwoo'&&P.mode==='sword'){crit=true;PARTY.critNext=false;popNum(P.x,2.6,P.z,'적청인과 — 확정 치명타','info');}return{v:base*m*(crit?1.7:1)*rand(0.92,1.08),crit};}
 function addShield(v){P.shield=Math.min(P.maxShield,P.shield+v);}
-function addBaek(v){if(P.baek>=100)return;P.baek=Math.min(100,P.baek+v);if(P.baek>=100){P.hwagT=CONFIG.baekhwa.hwagyeongTime;banner('백묵화 4단계 — 영로 화경! 피해 +30% · '+CONFIG.baekhwa.hwagyeongTime+'초 후 체력 침식 · 궁극기로 초기화',3.8,'big');burst(P.x,1.2,P.z,0xffffff,24,7,0.5,0.8);ringFx(P.x,P.z,0.5,5,0xe8fff4,0.7);}}
+function addBaek(v){if(P.baek>=100)return;P.baek=Math.min(100,P.baek+v);if(P.baek>=100){P.hwagT=CONFIG.baekhwa.hwagyeongTime;banner('백묵화 4단계 — 영로 화경! R로 5단계 『녹기현경 : 멸화정계』 발동 가능 · '+CONFIG.baekhwa.hwagyeongTime+'초 후 체력 침식',4.2,'big');burst(P.x,1.2,P.z,0xffffff,24,7,0.5,0.8);ringFx(P.x,P.z,0.5,5,0xe8fff4,0.7);}}
 function inPuddle(){if(P.taintImmune>0)return false;for(const p of puddles)if(Math.hypot(P.x-p.x,P.z-p.z)<p.r)return true;return false;}
 function inZone(x,z){for(const zn of zones)if(Math.hypot(x-zn.x,z-zn.z)<zn.r)return true;return false;}
 
@@ -31,7 +31,7 @@ function dealE(e,v,crit,src){if(e.dead)return false;
     if(e.runeActive)v*=1-BOSS.runeDamageCut;if(e.broken>0)v*=BOSS.brokenDamageMul;
     if(e.shield>0){const a=Math.min(e.shield,v);e.shield-=a;v-=a;if(v<=0){if(state.time-(e.absT||0)>0.4){e.absT=state.time;popNum(e.x,2.6,e.z,'룬 방어막','immune');}return true;}}
   }
-  if(e.vuln>0)v*=1.3;
+  if(e.vuln>0)v*=1.3;if(masterOn('oneShot'))v*=10;
   v=Math.max(1,Math.round(v));e.hp-=v;e.flash=0.08;e.barDirty=true;stats.dmg+=v;P.ult=Math.min(100,P.ult+v*CONFIG.ult.gainPerDamage);partyUltGain(v);
   popNum(e.x,(e.y||0)+1.6+rand(0,0.5),e.z,v,crit?'crit':'');
   if(e.hp<=0)killE(e);return true;}
@@ -48,6 +48,7 @@ function killE(e,self){e.dead=true;e.hp=0;stats.kills++;
 function hurtPlayer(dmg,opt={}){if(state.over||state.win||P.dead)return;
   if(P.parry>0&&P.mode==='sword'){ryeokrin();return;}
   if(P.iframe>0||P.invuln>0)return;
+  if(masterOn('god')){popNum(P.x,2.3,P.z,'무적','immune');return;}
   let d=dmg;if(P.stage>=1)d*=0.9;if(inZone(P.x,P.z))d*=0.7;
   if(!opt.pierce){const a=Math.min(P.shield,d);P.shield-=a;d-=a;if(a>0)burst(P.x,1.2,P.z,0x9ff5d6,6,4,0.3);}
   popNum(P.x,2.3,P.z,Math.round(dmg),'hurt');
@@ -177,19 +178,19 @@ function doSkill(k){if(P.char!=='yeonwoo')return partySkill(k);const brush=P.mod
 function mandalaFx(x,z){const g=new T.Group();for(const r of[3,5.5,8]){const m=new T.Mesh(flatGeo(new T.RingGeometry(r-0.15,r,64)),MB(0x3fae8c,0.0));g.add(m);}
   for(let i=0;i<8;i++){const geo=new T.PlaneGeometry(0.12,16);flatGeo(geo);const m=new T.Mesh(geo,MB(0x141414,0.0));m.rotation.y=i*PI/8;g.add(m);}
   g.position.set(x,0.1,z);addFx(g,2.4,(f,p,dt)=>{f.obj.rotation.y+=dt*0.8;const o=p<0.2?p/0.2:p>0.75?(1-p)/0.25:1;f.obj.children.forEach((m,i)=>m.material.opacity=(i<3?0.85:0.5)*o);},true);}
-function dropSword(x,z){const m=makeSword(1.6,0xe8fff4,0x3fae8c);m.rotation.x=PI;m.position.set(x,12,z);
+function dropSword(x,z){const m=WEAPONS.skySword();m.rotation.x=PI;m.position.set(x,12,z);
   addFx(m,0.55,(f,p)=>{const k=Math.min(1,p/0.45);f.obj.position.y=12-11.2*k*k;if(p>=0.45&&!f.hit){f.hit=1;burst(x,0.5,z,0x6fe0b8,8,6,0.4);ringFx(x,z,0.3,1.8,0x3fae8c,0.3);}},true);}
-function doUlt(){if(P.ult<100)return false;if(P.char!=='yeonwoo'){P.ult=0;stats.ults++;return partyUlt();}P.ult=0;P.invuln=2.0;stats.ults++;const cx=P.x,cz=P.z;mandalaFx(cx,cz);showCut('천지수묵 : 만화정계');
+function doUlt(){if(P.char==='yeonwoo'&&P.baek>=100&&P.nokgi<=0)return doNokgi();if(P.ult<100)return false;if(P.char!=='yeonwoo'){P.ult=0;stats.ults++;return partyUlt();}P.ult=0;P.invuln=2.0;stats.ults++;const cx=P.x,cz=P.z;mandalaFx(cx,cz);showCut('천지수묵 : 만화정계');
   const ev=[];for(let i=0;i<12;i++)ev.push({at:0.3+i*0.075,fn(){const al=alive();let x,z;if(al.length&&Math.random()<0.7){const e=al[Math.floor(Math.random()*al.length)];x=e.x+rand(-1,1);z=e.z+rand(-1,1);}else{const a=rand(0,TAU),r=rand(1,8);x=cx+Math.cos(a)*r;z=cz+Math.sin(a)*r;}dropSword(x,z);}});
   ev.push({at:1.35,fn(){for(const e of enemies){if(e.dead||dist2(P,e)>18)continue;const r=pdmg(CONFIG.ult.damage);dealE(e,r.v,r.crit,'ult');if(!e.dead&&e.stacks)bloom(e,e.stacks,1.5);}
-    P.baek=0;P.hwagT=0;P.taintImmune=10;addZone(cx,cz,8,10);for(let i=0;i<14;i++){const a=rand(0,TAU),r=rand(0,8);purify(cx+Math.cos(a)*r,cz+Math.sin(a)*r,rand(1.5,2.6));}
+    P.baek=Math.max(0,P.baek-CONFIG.ult.baekCost);if(P.baek<100)P.hwagT=0;else P.hwagT=CONFIG.baekhwa.hwagyeongTime;P.taintImmune=10;addZone(cx,cz,8,10);for(let i=0;i<14;i++){const a=rand(0,TAU),r=rand(0,8);purify(cx+Math.cos(a)*r,cz+Math.sin(a)*r,rand(1.5,2.6));}
     for(let i=puddles.length-1;i>=0;i--)if(Math.hypot(puddles[i].x-cx,puddles[i].z-cz)<8)puddles[i].t=Math.min(puddles[i].t,0.5);
     hitstop=0.25;shake(0.7);ringFx(cx,cz,1,14,0x6fe0b8,0.9,0.1,0.9);burst(cx,1.5,cz,0xf4c4d2,30,9,0.5,1);}});
   P.act={name:'ult',t:0,dur:1.7,cancel:false,events:ev};return true;}
 function addZone(x,z,r,t){const m=new T.Mesh(flatGeo(new T.CircleGeometry(r,48)),MB(0x6fe0b8,0.15));m.position.set(x,0.07,z);scene.add(m);zones.push({x,z,r,t,max:t,m});}
 
 /* ================= 입력 큐 ================= */
-function ready(q){if(q==='dodge')return P.dodgeCd<=0&&P.y<=0;if(q==='dash')return P.cds.dash<=0&&P.y<=0;if(q==='jump')return P.y<=0&&P.vy<=0;if(q==='sw')return P.cds.sw<=0&&P.char==='yeonwoo';if(q==='s1'||q==='s2'){return P.cds[skillId(q[1])]<=0;}if(q==='ult')return P.ult>=100;return true;}
+function ready(q){if(q==='dodge')return P.dodgeCd<=0&&P.y<=0;if(q==='dash')return P.cds.dash<=0&&P.y<=0;if(q==='jump')return P.y<=0&&P.vy<=0;if(q==='sw')return P.cds.sw<=0&&P.char==='yeonwoo';if(q==='s1'||q==='s2'){return P.cds[skillId(q[1])]<=0;}if(q==='ult')return P.ult>=100||(P.char==='yeonwoo'&&P.baek>=100&&P.nokgi<=0);return true;}
 function canDo(q){const a=P.act;if(P.stagger>0||P.dead)return false;if(!a)return true;if(a.name!=='atk')return false;if(q==='dodge'||q==='jump'||q==='dash')return a.t>=a.hitAt*0.5;return a.t>=a.dur*0.62;}
 function tryQueue(){const q=P.queue;if(!q||!ready(q)||!canDo(q))return;const cont=!!(P.act&&P.act.name==='atk');if(cont)P.act=null;P.queue=null;
   const air=P.y>0.05;
@@ -200,6 +201,30 @@ function runAct(dt){const a=P.act;if(!a)return;a.t+=dt;if(a.update)a.update(dt,a
 
 /* ================= 플레이어 업데이트 ================= */
 const _c=new T.Color();
+/* ===== 백묵화 5단계 『녹기현경 : 멸화정계』 · 이기어검 『오룡정계』 ===== */
+const nokgiSwords=new T.Group();for(let i=0;i<4;i++){const s=WEAPONS.nokgiSword();s.rotation.x=PI;nokgiSwords.add(s);}nokgiSwords.visible=false;scene.add(nokgiSwords);
+function doNokgi(){P.invuln=2.2;P.act=null;stats.nokgi=(stats.nokgi||0)+1;showCut('녹기현경 : 멸화정계');const cx=P.x,cz=P.z;
+  P.act={name:'ult',t:0,dur:1.5,cancel:false,events:[
+    {at:0.15,fn(){mandalaFx(cx,cz);ringFx(cx,cz,1,6,0x6fe0b8,0.6,0.1,0.9);burst(cx,1.5,cz,0x6fe0b8,26,7,0.5,0.9);}},
+    {at:0.6,fn(){const dr=new T.Mesh(new T.ConeGeometry(1.6,7,8,1,true),MB(0xf4fff9,0.7));dr.rotation.x=PI;dr.position.set(cx,14,cz);
+      addFx(dr,0.5,(f,p)=>{f.obj.position.y=14-10.5*Math.min(1,p*1.6);f.obj.material.opacity=0.7*(1-Math.max(0,p-0.6)/0.4);},true);}},
+    {at:0.95,fn(){showCut('이기어검 · 오룡정계');for(const e of enemies){if(e.dead||dist2(P,e)>18)continue;
+        if(e.type==='boss'){if(e.runeActive&&runes.length)breakRunes();else{e.shield=0;e.action=null;cancelStrikes(e);e.stance=0;e.stun=Math.max(e.stun,2);}}
+        const r=pdmg(CONFIG.nokgi.damage);dealE(e,r.v,r.crit,'ult');if(!e.dead&&e.stacks)bloom(e,e.stacks,1.5);}
+      for(let i=puddles.length-1;i>=0;i--)puddles[i].t=Math.min(puddles[i].t,0.3);
+      for(let i=0;i<10;i++){const a=rand(0,TAU),rr=rand(0,10);purify(cx+Math.cos(a)*rr,cz+Math.sin(a)*rr,rand(1.6,2.6));}
+      ringFx(cx,cz,1,16,0xf4fff9,0.9,0.1,0.9);hitstop=0.3;shake(0.8);
+      P.nokgi=CONFIG.nokgi.duration;P.nokgiT=0.3;P.hwagT=0;P.taintImmune=Math.max(P.taintImmune,CONFIG.nokgi.duration);
+      banner('오룡정계 — '+CONFIG.nokgi.duration+'초간 허상의 검 4자루 자동 공격 · 피해 '+CONFIG.nokgi.damageMul+'배 · 체력 침식 없음',3.8,'big');}}]};
+  return true;}
+function updateNokgi(dt){if(P.nokgi<=0){nokgiSwords.visible=false;return;}
+  P.nokgi-=dt;const show=P.char==='yeonwoo'&&!P.dead;nokgiSwords.visible=show;
+  if(show){nokgiSwords.position.set(P.x,P.y+1.7,P.z);nokgiSwords.children.forEach((s,i)=>{const a=state.time*2.4+i*TAU/4;s.position.set(Math.cos(a)*1.15,Math.sin(state.time*4+i)*0.12,Math.sin(a)*1.15);s.rotation.y=-a;});
+    P.nokgiT-=dt;if(P.nokgiT<=0){P.nokgiT=CONFIG.nokgi.swordInterval;const t=autoTarget(CONFIG.nokgi.swordRange);
+      if(t){const sw=nokgiSwords.children[Math.floor(state.time*10)%4];const wp=new T.Vector3();sw.getWorldPosition(wp);
+        const g=new T.Group();const b=new T.Mesh(new T.BoxGeometry(0.08,0.08,1.0),new T.MeshBasicMaterial({color:0xbfffe6}));g.add(b);const gl=new T.Sprite(new T.SpriteMaterial({map:dotTex,color:0x6fe0b8,transparent:true,depthWrite:false}));gl.scale.set(0.9,0.9,1);g.add(gl);
+        const ox=isFinite(wp.x)?wp.x:P.x,oy=isFinite(wp.y)?wp.y:1.7,oz=isFinite(wp.z)?wp.z:P.z;g.position.set(ox,oy,oz);scene.add(g);projs.push({m:g,x:ox,y:oy,z:oz,tgt:t,speed:22,player:true,t:0});}}}
+  if(P.nokgi<=0){P.nokgi=0;nokgiSwords.visible=false;P.baek=Math.min(P.baek,CONFIG.nokgi.endBaek);P.hwagT=0;banner('녹기현경 종료 — 백묵화 1단계로 돌아갑니다',2.5);burst(P.x,1.5,P.z,0x6fe0b8,16,5,0.4);}}
 function updatePlayer(dt){
   for(const k in P.cds)P.cds[k]=Math.max(0,P.cds[k]-dt);
   P.iframe-=dt;P.parry-=dt;P.invuln-=dt;P.stagger-=dt;P.dodgeCd-=dt;P.critBuff-=dt;P.rangeBuff-=dt;P.taintImmune-=dt;P.drainPause-=dt;P.yeonhaCd-=dt;P.comboT-=dt;P.maeCd-=dt;P.fieldCd-=dt;P.maeBuff-=dt;afterT-=dt;
@@ -210,7 +235,8 @@ function updatePlayer(dt){
   const st=P.char==='yeonwoo'?stageOf():0;
   if(st>P.stage&&st<4)banner(['','백묵화 1단계 — 용의 비늘 (받는 피해 -10% · 경직 저항)','백묵화 2단계 — 용안 개안 (치명타 +20%)','백묵화 3단계 — 사지 야수화 (속도 ↑ · 회피 시 잔상 공격)'][st],2.6);
   P.stage=st;
-  if(P.baek>=100&&P.char==='yeonwoo'){if(P.hwagT>0)P.hwagT-=dt;else if(P.drainPause<=0&&P.invuln<=0){P.hp=Math.max(1,P.hp-CONFIG.baekhwa.drainPerSec*(PARTY.maehyang.hp>0?1-CONFIG.party.maeDrainCut:1)*dt);if(P.hp<=P.maxHp*0.2&&P.yeonhaCd<=0&&PARTY.yeonha.hp>0)yeonhaRescue();}}
+  updateNokgi(dt);
+  if(P.baek>=100&&P.char==='yeonwoo'&&P.nokgi<=0){if(P.hwagT>0)P.hwagT-=dt;else if(P.drainPause<=0&&P.invuln<=0){P.hp=Math.max(1,P.hp-CONFIG.baekhwa.drainPerSec*(PARTY.maehyang.hp>0?1-CONFIG.party.maeDrainCut:1)*dt);if(P.hp<=P.maxHp*0.2&&P.yeonhaCd<=0&&PARTY.yeonha.hp>0)yeonhaRescue();}}
   if(P.sw>=100&&!flags.sw){flags.sw=1;banner('전환 게이지 FULL — 다음 전환은 강화 전환 (붓→검: 진명 정화 / 검→붓: 막묵 결계)',3.8);}
   if(P.ult>=100&&!flags.ult){flags.ult=1;banner('궁극기 준비 — 『천지수묵 : 만화정계』 (백묵화 초기화)',3.2);}
   const inP=inPuddle();
@@ -236,9 +262,11 @@ function animatePlayer(dt){updateCameos(dt);const PMe=PM,p=PMe.userData,piv=p.pi
   const k=snap?1:1-Math.exp(-20*dt);piv.rotation.x+=(rx-piv.rotation.x)*k;piv.rotation.y+=(ry-piv.rotation.y)*k;
   PMe.position.set(P.x,P.y+bob,P.z);PMe.rotation.y=P.ang+spin;PMe.rotation.x+=(lean-PMe.rotation.x)*Math.min(1,dt*14);
   pRing.position.set(P.x,0.03,P.z);if(atkHold.down&&!atkHold.fired&&atkHold.t>0.1){pRing.scale.setScalar(1+Math.min(1,atkHold.t/HOLD_T)*0.9);pRing.material.color.setHex(0xffffff);}else{pRing.scale.setScalar(1);pRing.material.color.setHex(P.char!=='yeonwoo'?CHARACTERS[P.char].color:P.mode==='brush'?0x3fae8c:0xe8fff4);}
-  const st=stageOf(),py=pMesh.userData;py.robe.color.lerp(_c.setHex(STAGE_COL[st]),1-Math.exp(-6*dt));py.robe.emissive.setHex(st>=4?0x2f7a62:0);
-  horns.visible=st>=4;
-  if(P.invuln>0){aura.material.color.setHex(0xf4a6c0);aura.material.opacity=0.22+0.08*Math.sin(state.time*14);}
+  const nk=P.nokgi>0,st=nk?0:stageOf(),py=pMesh.userData;py.robe.color.lerp(_c.setHex(STAGE_COL[st]),1-Math.exp(-6*dt));py.robe.emissive.setHex(st>=4?0x2f7a62:0);
+  py.hair.color.setHex(nk?0x6fe0b8:CHARACTERS.yeonwoo.hair);py.hair.emissive.setHex(nk?0x1d6a50:0);
+  horns.visible=st>=4||nk;
+  if(nk){aura.material.color.setHex(0x6fe0b8);aura.material.opacity=0.22+0.08*Math.sin(state.time*10);}
+  else if(P.invuln>0){aura.material.color.setHex(0xf4a6c0);aura.material.opacity=0.22+0.08*Math.sin(state.time*14);}
   else if(st>=4){aura.material.color.setHex(0x7fe8c2);aura.material.opacity=0.16+0.06*Math.sin(state.time*8);}
   else if(P.critBuff>0){aura.material.color.setHex(0xffffff);aura.material.opacity=0.1;}
   else aura.material.opacity=0;}

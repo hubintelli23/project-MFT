@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/party.js · v0.6
+/* MFT 블루잉크 : 천년청묵 · js/party.js · v0.8
    교대 시스템 — 연우 · 연하 · 매향 (1·2·3 교대, 교대 진입 공격, 쓰러지면 자동 교대, 지원 개입)
    연하·매향의 전투 기술 · 매화 진. 수치는 data/skills.js · data/characters.js · data/config.js */
 'use strict';
@@ -6,20 +6,7 @@ const PARTY_ORDER=['yeonwoo','yeonha','maehyang'];
 let PARTY=null;
 function newParty(){const p={critNext:false};for(const id of PARTY_ORDER){const C=CHARACTERS[id];p[id]={hp:C.hp,maxHp:C.hp,ult:0,mode:'brush'};}return p;}
 
-/* ---------- 모델 ---------- */
-function makeYeonha(){const C=CHARACTERS.yeonha;const g=makeHuman(C);const u=g.userData;
-  const fl=new T.Group();const body=new T.Mesh(new T.CylinderGeometry(0.035,0.035,0.8,8),lam(C.flute,0x1d4a40));body.position.y=-0.35;fl.add(body);
-  for(let i=0;i<4;i++){const h=new T.Mesh(new T.SphereGeometry(0.018,4,4),new T.MeshBasicMaterial({color:0x141414}));h.position.set(0,-0.15-i*0.13,0.03);fl.add(h);}
-  const tas=new T.Mesh(new T.ConeGeometry(0.05,0.2,6),lam(0xb23a5a,0x3a0a14));tas.position.y=-0.85;tas.rotation.x=PI;fl.add(tas);u.hand.add(fl);
-  for(const s of[-1,1]){const rib=new T.Mesh(new T.BoxGeometry(0.05,0.35,0.02),lam(s<0?0xe0303a:0x3a7ae0));rib.position.set(0.18*s,1.85,-0.22);rib.rotation.z=0.3*s;g.add(rib);}
-  g.visible=false;scene.add(g);return g;}
-function makeMaehyang(){const C=CHARACTERS.maehyang;const g=makeHuman(C);const u=g.userData;
-  const case_=new T.Group();const tube=new T.Mesh(new T.CylinderGeometry(0.06,0.06,0.32,8),lam(0x3a2c20));tube.position.y=-0.15;case_.add(tube);
-  for(let i=0;i<3;i++){const n=new T.Mesh(new T.CylinderGeometry(0.008,0.008,0.4,4),new T.MeshBasicMaterial({color:0xf2f2e8}));n.position.set(-0.03+i*0.03,-0.45,0.02);case_.add(n);}u.hand.add(case_);
-  const fm=new T.MeshBasicMaterial({color:C.flower});for(let i=0;i<5;i++){const f=new T.Mesh(new T.SphereGeometry(0.045,6,5),fm);const a=i/5*TAU;f.position.set(0.16+Math.cos(a)*0.06,2.13+Math.sin(a)*0.06,-0.08);g.add(f);}
-  const ctr=new T.Mesh(new T.SphereGeometry(0.03,6,5),new T.MeshBasicMaterial({color:0xe8c24a}));ctr.position.set(0.16,2.13,-0.05);g.add(ctr);
-  g.visible=false;scene.add(g);return g;}
-const MESH={yeonwoo:pMesh,yeonha:makeYeonha(),maehyang:makeMaehyang()};
+const MESH={yeonwoo:pMesh,yeonha:AVATARS.yeonha(),maehyang:AVATARS.maehyang()};for(const k of['yeonha','maehyang']){MESH[k].visible=false;scene.add(MESH[k]);}
 let PM=pMesh;
 
 /* ---------- 지원 등장(카메오) : 대기 중인 동료가 잠깐 나타남 ---------- */

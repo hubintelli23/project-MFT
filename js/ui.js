@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/ui.js · v0.6
+/* MFT 블루잉크 : 천년청묵 · js/ui.js · v0.8
    (v0.5: 지도 · 설정 · 새 조작 체계 추가)
    HUD · 대화창 · 입력(키보드·마우스·터치) */
 'use strict';
@@ -24,15 +24,16 @@ const ULTL={yeonwoo:'천지<br>수묵',yeonha:'쌍안<br>연화',maehyang:'대�
 const BADGE={brush:'붓 모드',sword:'검 모드',yeonha:'피리',maehyang:'침술'};
 function updateUI(dt){updateInteractUI();updatePartyHud();
   setS('hpFill','width',(P.hp/P.maxHp*100).toFixed(1)+'%');setS('shFill','width',(P.shield/P.maxHp*100).toFixed(1)+'%');setT('hpTxt',Math.ceil(P.hp)+(P.shield>0.5?' +'+Math.floor(P.shield):''));
-  setS('bkFill','width',P.baek.toFixed(1)+'%');setT('bkStage',P.stage>=4&&P.hwagT<=0?'4 영로 화경 · 침식':STAGE_NAME[P.stage]);
+  const nk=P.nokgi>0,bst=stageOf();setS('bkFill','width',(nk?P.nokgi/CONFIG.nokgi.duration*100:P.baek).toFixed(1)+'%');setC('bkFill','nokgi',nk);
+  setT('bkStage',nk?'5 녹기현경 · '+Math.ceil(P.nokgi)+'초':bst>=4&&P.hwagT<=0?'4 영로 화경 · 침식':STAGE_NAME[bst]);
   setS('swFill','width',P.sw.toFixed(1)+'%');setC('swFill','full',P.sw>=100);
   const brush=P.mode==='brush',yw=P.char==='yeonwoo';setT('pName',CHARACTERS[P.char].name);setT('modeBadge',BADGE[P.mode]);setC('modeBadge','sword',P.mode==='sword');
-  setH('lS1',SKL[P.mode][0]);setH('lS2',SKL[P.mode][1]);setH('lUlt',ULTL[P.char]);setC('swRow','off',!yw);
+  setH('lS1',SKL[P.mode][0]);setH('lS2',SKL[P.mode][1]);const nkReady=yw&&P.baek>=100&&P.nokgi<=0;setH('lUlt',nkReady?'녹기<br>현경':ULTL[P.char]);setC('swRow','off',!yw);
   setH('lSw',!yw?'전환<br>—':P.sw>=100?(brush?'진명<br>정화':'막묵<br>결계'):(brush?'전환<br>→검':'전환<br>→붓'));setC('bSw','ready',yw&&P.sw>=100);setC('bSw','dis',!yw);
   const cdSet=(id,v,max)=>setS(id,'height',(max>0?clamp(v/max,0,1)*100:0).toFixed(0)+'%');
   const q=document.querySelector.bind(document);
   cdSet2('bDash',P.cds.dash,CONFIG.player.dashCd);cdSet2('bS1',P.cds[skillId(1)],CD[skillId(1)]);cdSet2('bS2',P.cds[skillId(2)],CD[skillId(2)]);cdSet2('bDodge',Math.max(0,P.dodgeCd),1.1);
-  const f=Math.floor(P.ult)+'%';if(uiCache.ult!==f){uiCache.ult=f;$('bUlt').style.setProperty('--f',f);}setC('bUlt','ready',P.ult>=100);
+  const f=Math.floor(P.ult)+'%';if(uiCache.ult!==f){uiCache.ult=f;$('bUlt').style.setProperty('--f',f);}setC('bUlt','ready',P.ult>=100||nkReady);setC('bUlt','nokgi',nkReady);
   if(boss){setS('bhpFill','width',(Math.max(0,boss.hp)/boss.maxHp*100).toFixed(1)+'%');setS('bshFill','width',(boss.shield/boss.maxHp*100).toFixed(1)+'%');
     const pips=$('bpips').children;for(let i=0;i<5;i++)setC2(pips[i],i<boss.stacks);
     let s='';if(boss.dead)s='정화됨';else if(boss.stun>0)s=boss.broken>0?'기절 · 받는 피해 150%':'기절';else if(boss.stance>0)s='유수 반격 자세';else if(boss.runeActive)s='청룡의 정화 룬 · 피해 80% 감소 · 먹선 '+runes.filter(r=>r.linked).length+'/3';else if(boss.p2)s='2페이즈 · 청룡의 도류';setT('bstate',s);}
@@ -72,6 +73,7 @@ function updateHold(dt){if(atkHold.down&&!atkHold.fired){atkHold.t+=dt;if(atkHol
 bindBtn('bJump','jump');bindBtn('bS1','s1');bindBtn('bS2','s2');bindBtn('bDodge','dodge');bindBtn('bDash','dash');bindBtn('bSw','sw');bindBtn('bUlt','ult');bindBtn('bInt','interact');
 const KMAP={};{const K=CONFIG.keys;KMAP[K.skill1]='s1';KMAP[K.skill2]='s2';KMAP[K.ult]='ult';KMAP[K.switch]='sw';KMAP[K.jump]='jump';KMAP[K.interact]='interact';for(const k of K.dodge)KMAP[k]='dodge';}
 addEventListener('keydown',e=>{const k=e.code,K=CONFIG.keys;
+  if(k===K.master){e.preventDefault();if(!e.repeat)toggleMaster();return;}
   if(k===K.settings){e.preventDefault();if(state.mapOpen)toggleMap();else if(!dialogOpen)togglePause();return;}
   if(dialogOpen&&(k==='Space'||k==='Enter')){e.preventDefault();if(!e.repeat)advanceDialog();return;}
   input.keys[k]=true;

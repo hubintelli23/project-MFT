@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v0.6
+/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v0.8
    적 공통 · 잡몹 AI · 공격 판정 · 투사체 */
 'use strict';
 /* ================= 적 공통 ================= */
@@ -10,16 +10,12 @@ function drawBar(e){const{c,tex}=e.bar,g=c.getContext('2d');g.clearRect(0,0,128,
   for(let i=0;i<5;i++){const x=24+i*20,y=12;g.beginPath();g.arc(x,y,7,0,TAU);g.fillStyle=i<e.stacks?'#141414':'rgba(20,18,16,0.18)';g.fill();if(i<e.stacks){g.strokeStyle='#5fd6a8';g.lineWidth=2.5;g.stroke();}}tex.needsUpdate=true;e.barDirty=false;}
 function rootRing(e,r){const m=new T.Mesh(flatGeo(new T.RingGeometry(r*0.9,r*1.25,24)),MB(0x141414,0.75));m.visible=false;scene.add(m);e.rootM=m;}
 function spawnFx(x,z,col=0x141414){burst(x,0.6,z,col,16,6,0.5,0.6);ringFx(x,z,0.4,2.6,col,0.5);}
-function spawnRusher(x,z){const e=baseEnemy('rusher',x,z,ENEMIES.rusher.hp,0.55);const g=new T.Group();const bm=new T.MeshPhongMaterial({color:0x1d1416,emissive:0x2a0508,flatShading:true,shininess:8});const b=new T.Mesh(new T.IcosahedronGeometry(0.58,0),bm);b.position.y=0.6;g.add(b);const o=new T.Mesh(b.geometry,OL);o.scale.setScalar(1.1);b.add(o);
-  for(let i=0;i<5;i++){const s=new T.Mesh(new T.SphereGeometry(rand(0.14,0.24),6,6),lam(0x4a0d14,0x2a0006));s.position.set(rand(-0.4,0.4),rand(0.5,1.05),rand(-0.4,0.3));g.add(s);}
-  const em=new T.MeshBasicMaterial({color:0xff3b3b});for(const sx of[-0.17,0.17]){const ey=new T.Mesh(new T.SphereGeometry(0.06,6,6),em);ey.position.set(sx,0.78,0.5);g.add(ey);}
+function spawnRusher(x,z){const e=baseEnemy('rusher',x,z,ENEMIES.rusher.hp,0.55);const A=AVATARS.rusher();const g=A.g,bm=A.mats[0],b=A.body;
   e.mesh=g;setMats(e,[bm]);e.body=b;scene.add(g);barSprite(e,1.2);e.barY=1.7;e.fuse=0;rootRing(e,0.7);spawnFx(x,z);return e;}
-function spawnEater(x,z){const e=baseEnemy('eater',x,z,ENEMIES.eater.hp,0.6);const g=new T.Group();const bm=lam(0x161214,0x1a0204);const b=new T.Mesh(new T.SphereGeometry(0.5,14,12),bm);g.add(b);const o=new T.Mesh(b.geometry,OL);o.scale.setScalar(1.08);b.add(o);
-  const mouth=new T.Mesh(new T.TorusGeometry(0.26,0.08,8,16),new T.MeshBasicMaterial({color:0xa3202c}));mouth.position.z=0.42;g.add(mouth);const inner=new T.Mesh(new T.CircleGeometry(0.24,16),new T.MeshBasicMaterial({color:0x050303}));inner.position.z=0.43;g.add(inner);
-  for(let i=0;i<4;i++){const t=new T.Mesh(new T.ConeGeometry(0.12,0.7,5),bm);t.position.set(rand(-0.3,0.3),-0.5,rand(-0.3,0.1));t.rotation.x=PI+rand(-0.4,0.4);g.add(t);}
+function spawnEater(x,z){const e=baseEnemy('eater',x,z,ENEMIES.eater.hp,0.6);const A=AVATARS.eater();const g=A.g,bm=A.mats[0],b=A.body;
   const fog=new T.Mesh(new T.SphereGeometry(FOG_R,20,14),MB(0x2a0c12,0.1));scene.add(fog);e.fog=fog;
   e.mesh=g;setMats(e,[bm]);e.body=b;scene.add(g);barSprite(e,1.2);e.barY=1.0;e.shootT=rand(1.5,2.5);e.y=1.8;rootRing(e,0.7);spawnFx(x,z);return e;}
-function spawnBoss(){const e=baseEnemy('boss',0,-11,BOSS.hp,0.95);e.mesh=makeBossMesh();setMats(e,[e.mesh.userData.robe]);scene.add(e.mesh);e.ang=0;e.cd=1.5;e.action=null;e.shield=0;e.stance=0;e.p2=false;e.runeActive=false;e.runeDone=false;e.broken=0;e.lastAct='';e.dash=null;e.walk=0;e.swingT=0;e.invulnT=0;e.pulling=0;
+function spawnBoss(){const e=baseEnemy('boss',0,-11,BOSS.hp,0.95);e.mesh=AVATARS.cheongryu();setMats(e,[e.mesh.userData.robe]);scene.add(e.mesh);e.ang=0;e.cd=1.5;e.action=null;e.shield=0;e.stance=0;e.p2=false;e.runeActive=false;e.runeDone=false;e.broken=0;e.lastAct='';e.dash=null;e.walk=0;e.swingT=0;e.invulnT=0;e.pulling=0;
   boss=e;$('bhud').hidden=false;spawnFx(0,-11,0x2b6b8a);waterBurst(0,-11);return e;}
 function alive(){return enemies.filter(e=>!e.dead);}
 function inFog(e){for(const f of enemies)if(f.type==='eater'&&!f.dead&&Math.hypot(e.x-f.x,e.z-f.z)<FOG_R)return true;return false;}
