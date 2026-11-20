@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · css/style.css · v0.8
+/* MFT 블루잉크 : 천년청묵 · css/style.css · v1.1
    화면 디자인(HUD · 버튼 · 대화창 · 타이틀) */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#e9e3d5;font-family:'Noto Sans KR',system-ui,sans-serif;color:#1a1816;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -146,3 +146,34 @@ html,body{width:100%;height:100%;overflow:hidden;background:#e9e3d5;font-family:
 #masterPanel .mt.on i{background:#3fae8c}
 #masterPanel .mt.on i::after{left:15px}
 #masterPanel .mfoot{margin-top:8px;font-size:9.5px;opacity:.55;line-height:1.5}
+/* v0.9 HUD · 전투 */
+#party{top:calc(176px + env(safe-area-inset-top))}
+#phud .grow .gl{width:36px}
+#shBar{height:7px}#shBar #shFill{position:absolute;left:0;top:0;bottom:0;height:auto;background:linear-gradient(90deg,#9ff5d6,#e8fff4)}
+#hpBar{height:11px}
+.bar .btx,#shTxt{position:absolute;right:4px;top:-2px;font-size:8.5px;font-weight:900;color:#f4efe4;text-shadow:0 0 2px #000}
+#clFill{background:linear-gradient(90deg,#5aa6c8,#bfe9ff)}#clFill.hwag{background:linear-gradient(90deg,#e8fff4,#fff,#e8fff4);background-size:200% 100%;animation:shine 1s linear infinite}
+#yrFill{background:linear-gradient(90deg,#2f8f6e,#6fe0b8)}
+#defTag{margin-top:3px;font-size:11px;font-weight:900;color:#1f5a80;text-shadow:0 0 4px #e9e3d5;min-height:14px}
+#phud.guarding #hpBar{box-shadow:0 0 0 2px #e8fff4}
+.bstg{height:5px;margin-top:2px}#bstgFill{background:#d9a330}#bstgFill.groggy{background:#f2d36b;animation:blink .5s infinite}
+.num.warn{color:#8a1f9a;font-size:13px;font-weight:900;background:rgba(244,239,228,.9);padding:1px 6px;border:1.5px solid #8a1f9a;border-radius:2px}
+.cb.jt{border-color:#f2d36b;box-shadow:0 0 12px 3px rgba(242,211,107,.7);background:rgba(40,30,10,.75)}
+#party .sb{grid-column:2/3;height:3px;background:rgba(26,24,22,.2);position:relative;margin-top:1px}
+#party .sb>div{position:absolute;left:0;top:0;bottom:0;background:#d9a330}
+#party .ps.sup .sb>div{background:#f2d36b;box-shadow:0 0 5px #f2d36b}
+#party .jk{grid-row:1/3;grid-column:3;font-style:normal;font-size:9px;font-weight:900;opacity:0;color:#8a6a10}
+#party .ps.sup .jk{opacity:1}#party .ps.sup .pu{display:none}
+.stgHead{margin:14px 0 6px;font:800 14px 'Nanum Myeongjo',serif;letter-spacing:.2em}
+#stageList{display:grid;gap:8px;max-width:520px;margin:0 auto}
+.stg{display:grid;grid-template-columns:1fr;text-align:left;padding:10px 14px;border:2px solid #141414;background:rgba(255,255,255,.45);cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.stg b{font:800 16px 'Nanum Myeongjo',serif}.stg span{font-size:12px;font-weight:700;color:#1f5a80}.stg small{font-size:10.5px;opacity:.65}
+.stg:hover,.stg:active{background:#141414;color:#ece6d8}.stg:hover span,.stg:active span{color:#9fd8ff}
+/* v1.0 타이틀 — 스크롤 시 위쪽이 잘리지 않게 · 스토리 모드 */
+.screen{align-items:flex-start}.screen>.tbox{margin:auto}
+.modeRow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}
+.modeRow .big{margin:0}
+#nextBtn{margin-right:8px}
+/* v1.1 하야 — 청염의 백지화 (HUD · 화면이 흑백으로 지워짐) · 보스 목록 묶음 제목 */
+body.blank .hud,body.blank #party{opacity:.12;transition:opacity .3s}body.blank canvas{filter:grayscale(1) contrast(1.15)}
+.stgGroup{margin:10px 0 2px;font:800 13px 'Nanum Myeongjo',serif;letter-spacing:.15em;color:#1f5a80;text-align:left}
