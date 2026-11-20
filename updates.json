@@ -1,8 +1,59 @@
 {
   "project": "MFT 블루잉크 : 천년청묵 — 전투 체험판",
-  "currentVersion": "v0.8",
+  "currentVersion": "v0.9",
   "rule": "새 버전을 만들 때마다 updates 맨 앞에 항목을 추가합니다. files.added = 새로 생긴 파일, files.changed = 내용이 바뀌어 버전이 올라간 파일, files.removed = 삭제된 파일",
   "updates": [
+    {
+      "version": "v0.9",
+      "date": "2026-11-20",
+      "title": "전투 시스템 기획서 반영 · 신규 보스 백진 · 천제혁",
+      "changes": [
+        "가드(C) · 패링 → 슈아 반격 · 스웨이(타이밍 회피) 추가",
+        "강체 · 방어막 분리 표시 · 무적(즉사 생존) · 가드파쇄 공격 유형 추가",
+        "적 스태거 게이지 → 무력화(받는 피해 1.3배) 추가 · 잡몹 포함",
+        "공격 유형(일반 · 강공격 · 가드 불가 · 잡기 · 스웨이 불가 · 즉사)별 예고 색, 연하 오드아이 경고",
+        "자원: 청명도 · 영로(스킬 소모) · 백묵화 침식도 · 녹기 — 영로화경은 침식도 75% + 청명도 100으로 진입, 청명도가 다 닳으면 해제",
+        "붓/검 전환: 자원 소모 없음 · 공격 없음 · 캔슬 구간 전환 가능 · 전환 후 공격 시 연계기",
+        "연하 · 매향 지원 게이지와 공동 오의 쌍안연화 / 녹기쌍룡 : 연하정화참 / 만화정계 : 대지개화, 삼인 공동 오의 삼라만화 : 개화",
+        "연하 · 매향 궁극기 이름 정리: 쌍안 · 시공 정지 / 매령 회생진(쓰러진 동료 부활)",
+        "타이틀 보스 선택, 결과 화면 보스 선택 버튼, 무대 테마 3종",
+        "신규 보스 백진(정면 방패 가드 · 성기 해방 · 결계와 아크 룬 · 환영 기사)",
+        "신규 보스 천제혁(잡기 · 흑염 고리 · 탁화 · 침식 공격 · 강제 폭주 · 즉사기)",
+        "마스터 모드: 청명도 슬라이더 · 영로 무한 · 지원 게이지 가득 · 보스 무력화 추가",
+        "결과 화면에 패링 · 스웨이 · 무력화 · 공동 오의 횟수 표시"
+      ],
+      "files": {
+        "added": [
+          "js/combat.js",
+          "js/bosses/baekjin.js",
+          "js/bosses/cheonjehyeok.js"
+        ],
+        "changed": [
+          "index.html",
+          "README.md",
+          "updates.json",
+          "css/style.css",
+          "data/config.js",
+          "data/skills.js",
+          "data/characters.js",
+          "data/enemies.js",
+          "data/dialog.js",
+          "js/version.js",
+          "js/assets/background.js",
+          "js/assets/weapons.js",
+          "js/assets/avatars.js",
+          "js/state.js",
+          "js/player.js",
+          "js/enemies.js",
+          "js/boss.js",
+          "js/party.js",
+          "js/master.js",
+          "js/ui.js",
+          "js/main.js"
+        ],
+        "removed": []
+      }
+    },
     {
       "version": "v0.8",
       "date": "2026-11-19",
