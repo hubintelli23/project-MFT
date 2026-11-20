@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/assets/background.js · v0.8
+/* MFT 블루잉크 : 천년청묵 · js/assets/background.js · v0.9
    배경 — 하늘·안개 색 · 조명 · 전투 지면 · 산 · 대나무 · 청매나무 · 떠다니는 먹 입자
    배경을 바꾸려면 이 파일만 수정하면 됩니다. (전투 구역 크기는 data/config.js의 arena) */
 'use strict';
@@ -32,6 +32,13 @@ const plumMat=new T.MeshLambertMaterial({color:0xcfe4ee}),trunkMat=new T.MeshLam
 for(let i=0;i<7;i++){const a=rand(0,TAU),r=rand(18,22);const g=new T.Group();const t=new T.Mesh(new T.CylinderGeometry(0.15,0.3,3,6),trunkMat);t.position.y=1.5;t.rotation.z=rand(-0.3,0.3);g.add(t);for(let k=0;k<5;k++){const s=new T.Mesh(new T.IcosahedronGeometry(rand(0.6,1.1),0),plumMat);s.position.set(rand(-1,1),rand(2.8,3.8),rand(-1,1));g.add(s);}g.position.set(Math.cos(a)*r,0,Math.sin(a)*r);scene.add(g);}
 const moteGeo=new T.BufferGeometry();const motePos=new Float32Array(90*3);for(let i=0;i<90;i++){motePos[i*3]=rand(-20,20);motePos[i*3+1]=rand(0.3,7);motePos[i*3+2]=rand(-20,20);}moteGeo.setAttribute('position',new T.BufferAttribute(motePos,3));
 scene.add(new T.Points(moteGeo,new T.PointsMaterial({size:0.22,map:dotTex,color:0x2b2b2b,transparent:true,opacity:0.4,depthWrite:false})));
+/* ---------- 스테이지 테마 (보스마다 하늘 · 안개 · 지면 색) ---------- */
+const THEMES={
+  cheongok:{sky:0xe9e3d5,ground:0xffffff,outer:0xd9d1bf},   // 청옥림
+  seolbaek:{sky:0xeef2f6,ground:0xe9eff5,outer:0xe2e8ee},   // 설백산
+  magung:{sky:0x8e837d,ground:0xa8968f,outer:0x6e625e},     // 구해 마궁
+};
+function setTheme(id){const t=THEMES[id]||THEMES.cheongok;scene.background.setHex(t.sky);scene.fog.color.setHex(t.sky);ground.material.color.setHex(t.ground);outer.material.color.setHex(t.outer);}
 /* ---------- 매 프레임 배경 움직임 ---------- */
 function updateBackground(dt){
   for(let i=0;i<90;i++){motePos[i*3+1]+=dt*0.25;if(motePos[i*3+1]>7)motePos[i*3+1]=0.3;}moteGeo.attributes.position.needsUpdate=true;

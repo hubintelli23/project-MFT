@@ -1,5 +1,5 @@
-/* MFT 블루잉크 : 천년청묵 · js/assets/avatars.js · v0.8
-   아바타(캐릭터 모델) — 연우 · 연하 · 매향 · 청류 · 탁기 궤웅 · 묵식귀
+/* MFT 블루잉크 : 천년청묵 · js/assets/avatars.js · v0.9
+   아바타(캐릭터 모델) — 연우 · 연하 · 매향 · 청류 · 백진 · 천제혁 · 탁기 궤웅 · 묵식귀 · 기사 환영 · 아크 룬
    캐릭터 모습을 바꾸려면 AVATARS 목록의 만드는 함수를 고칩니다. 색·크기는 data/characters.js
    (나중에 .glb 모델로 바꿀 때는 같은 이름의 함수가 3D 오브젝트를 돌려주면 됩니다.
     사람형 아바타는 userData.piv(오른팔 관절) · userData.hand(무기 쥐는 곳) · userData.robe/hair(재질)를 갖춰야 애니메이션이 동작합니다) */
@@ -51,6 +51,26 @@ function makeCheongryu(){
   const stars=new T.Group();for(let i=0;i<3;i++){const s=new T.Mesh(new T.OctahedronGeometry(0.09,0),new T.MeshBasicMaterial({color:0xf2d36b}));s.position.set(Math.cos(i*TAU/3)*0.4,2.5,Math.sin(i*TAU/3)*0.4);stars.add(s);}stars.visible=false;g.add(stars);u.stars=stars;
   return g;
 }
+/* ---------- 보스 공통 장식 (기절 별 · 강체 금빛) ---------- */
+function bossExtras(g){const u=g.userData;if(!u.stars){const stars=new T.Group();for(let i=0;i<3;i++){const s=new T.Mesh(new T.OctahedronGeometry(0.09,0),new T.MeshBasicMaterial({color:0xf2d36b}));s.position.set(Math.cos(i*TAU/3)*0.4,2.5,Math.sin(i*TAU/3)*0.4);stars.add(s);}stars.visible=false;g.add(stars);u.stars=stars;}
+  const am=new T.Mesh(new T.SphereGeometry(1.35,18,14),MB(0xf2d36b,0.0));am.position.y=1.15;g.add(am);u.armorM=am;return g;}
+function makeBaekjin(){const C=CHARACTERS.baekjin;const g=makeHuman(C);g.scale.setScalar(C.scale);const u=g.userData;u.hand.add(WEAPONS.baekjinSword());
+  const sh=WEAPONS.baekjinShield();sh.position.set(-0.5,1.2,0.42);g.add(sh);u.shield=sh;
+  const helm=new T.Mesh(new T.CylinderGeometry(0.22,0.26,0.26,8),lam(0xe8edf2,0x30343a));helm.position.set(0,2.12,0);g.add(helm);const pl=new T.Mesh(new T.ConeGeometry(0.06,0.4,4),lam(C.emblem));pl.position.set(0,2.42,0);g.add(pl);
+  for(const s of[-1,1]){const pa=new T.Mesh(new T.SphereGeometry(0.17,8,6),lam(0xdfe5ea,0x30343a));pa.position.set(0.36*s,1.72,0);pa.scale.y=0.7;g.add(pa);}
+  const dome=new T.Mesh(new T.SphereGeometry(1.7,20,16),MB(0xf2d36b,0.0));dome.position.y=1.2;g.add(dome);u.barrierM=dome;
+  return bossExtras(g);}
+function makeCheonjehyeok(){const C=CHARACTERS.cheonjehyeok;const g=makeHuman(C);g.scale.setScalar(C.scale);const u=g.userData;u.hand.add(WEAPONS.cheonjehyeokBlade());
+  for(const s of[-1,1]){const h=new T.Mesh(new T.ConeGeometry(0.05,0.36,5),lam(0x1a0a0a,0x3a0508));h.position.set(0.12*s,2.24,0.02);h.rotation.z=-0.5*s;g.add(h);}
+  const cape=new T.Mesh(new T.ConeGeometry(0.75,1.6,8,1,true),lam(0x3a0a0e));cape.position.set(0,1.0,-0.2);g.add(cape);
+  const aura=new T.Mesh(new T.SphereGeometry(1.4,16,12),MB(0x5a0a10,0.12));aura.position.y=1.2;g.add(aura);u.flameAura=aura;
+  return bossExtras(g);}
+function makePhantom(){const C=CHARACTERS.phantom;const g=new T.Group();const mt=new T.MeshLambertMaterial({color:C.color,emissive:0x2a3240,transparent:true,opacity:0.72});
+  const body=new T.Mesh(new T.CylinderGeometry(0.28,0.5,1.5,8),mt);body.position.y=0.85;g.add(body);const head=new T.Mesh(new T.SphereGeometry(0.22,10,8),mt);head.position.y=1.8;g.add(head);
+  const sw=WEAPONS.phantomSword();sw.position.set(0.4,1.4,0.2);sw.rotation.x=-1.2;g.add(sw);return{g,body,mats:[mt]};}
+function makeArcRune(){const g=new T.Group();const mt=lam(0xe8edf2,0x6a5010);const ped=new T.Mesh(new T.CylinderGeometry(0.55,0.75,0.5,8),lam(0x8a9098));ped.position.y=0.25;g.add(ped);
+  const body=new T.Mesh(new T.OctahedronGeometry(0.62,0),mt);body.position.y=1.7;body.scale.y=1.5;g.add(body);const o=new T.Mesh(body.geometry,OL);o.scale.setScalar(1.12);body.add(o);
+  const ring=new T.Mesh(flatGeo(new T.RingGeometry(0.95,1.1,32)),MB(0xf2d36b,0.7));ring.position.y=0.05;g.add(ring);return{g,body,mats:[mt]};}
 /* ---------- 구해의 마물 ---------- */
 function makeRusher(){const g=new T.Group();const bm=new T.MeshPhongMaterial({color:0x1d1416,emissive:0x2a0508,flatShading:true,shininess:8});const b=new T.Mesh(new T.IcosahedronGeometry(0.58,0),bm);b.position.y=0.6;g.add(b);const o=new T.Mesh(b.geometry,OL);o.scale.setScalar(1.1);b.add(o);
   for(let i=0;i<5;i++){const s=new T.Mesh(new T.SphereGeometry(rand(0.14,0.24),6,6),lam(0x4a0d14,0x2a0006));s.position.set(rand(-0.4,0.4),rand(0.5,1.05),rand(-0.4,0.3));g.add(s);}
@@ -63,7 +83,8 @@ function makeEater(){const g=new T.Group();const bm=lam(0x161214,0x1a0204);const
 /* ---------- 아바타 목록 (게임 코드는 여기서 꺼내 씁니다) ---------- */
 const AVATARS={
   yeonwoo:makeYeonwoo, yeonha:makeYeonha, maehyang:makeMaehyang,
-  cheongryu:makeCheongryu,
+  cheongryu:()=>bossExtras(makeCheongryu()), baekjin:makeBaekjin, cheonjehyeok:makeCheonjehyeok,
+  phantom:makePhantom, arcrune:makeArcRune,
   rusher:makeRusher, eater:makeEater,
 };
 /* ---------- 연우 아바타 배치 (무기 · 백묵화 오라 · 용뿔 · 발밑 원) ---------- */
