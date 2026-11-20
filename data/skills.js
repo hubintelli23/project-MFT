@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · data/skills.js · v0.6
+/* MFT 블루잉크 : 천년청묵 · data/skills.js · v0.9
    연우의 공격 수치.
    dur=동작 시간(초)  hit=타격 순간(초)  range=사거리  half=좌우 판정 각도(도, 180=전방위)
    dmg=피해  lunge=앞으로 미끄러지는 거리  mark=낙인 부여 수  bloom=개화시킬 낙인 수
@@ -52,3 +52,10 @@ STRONG.maehyang={n:'대지 침술',dur:0.6,hit:0.3,range:3,half:180,dmg:9,bloom:
 
 // 쿨타임 — h1 적안·경고의 음 · h2 청안·균열 노출 · m1 매화혈맥진 · m2 생기 착근
 CD.h1=12;CD.h2=10;CD.m1=14;CD.m2=8;
+
+/* ===== v0.9 가드파쇄(gb) · 영로 소모 =====
+   gb:true = 가드파쇄 공격 — 적의 가드 · 강체를 깨뜨리고 스태거를 크게 깎음 */
+STRONG.brush.gb=true;STRONG.sword.gb=true;STRONG.yeonha.gb=true;STRONG.maehyang.gb=true;
+DEF.sword[3].gb=true;   // 검 4타 정화의 십자 참격
+// 스킬(Q · E)을 쓸 때 드는 영로
+const SKILL_COST={b1:20,b2:15,s1:15,s2:25,h1:25,h2:15,m1:30,m2:15};
