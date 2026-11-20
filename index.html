@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<!-- MFT 블루잉크 : 천년청묵 · index.html · v0.9
+<!-- MFT 블루잉크 : 천년청묵 · index.html · v1.1
      화면 뼈대만 담고, 실제 내용은 css/ · data/ · js/ 폴더의 파일에서 불러옵니다. -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>블루잉크 : 천년청묵 — 전투 체험판</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.9">
+<link rel="stylesheet" href="css/style.css?v=1.1">
 </head>
 <body>
 <div id="game"></div>
@@ -68,9 +69,11 @@
   <h1>블루잉크</h1>
   <div class="tsub3">천년청묵</div>
   <div class="tsub2">전투 체험판 <span id="verTxt"></span></div>
+  <div class="modeRow"><button id="storyNew" class="big">스토리 모드</button><button id="storyCont" class="big alt" hidden>이어하기</button></div>
+  <div class="tnote">스토리 모드 23장: 5대 가문 → 마교 → 심원회(드래곤 하트) → 월계 → 백명신궁(화염의 존재 8 · 구야 · 하야 · 백야)</div>
   <p class="tdesc">붓으로 먹선 낙인을 새기고, 검으로 베어 개화시켜라.<br>탁기를 정화할수록 백묵화가 깊어진다.</p>
-  <div class="stgHead">보스 선택</div>
-  <div id="stageList"></div>
+  <div class="stgHead">보스 선택 — 원하는 보스와 바로 겨루기</div>
+  <div id="stageList"><b style="color:#8a2028">보스 목록을 불러오지 못했습니다 — 페이지를 새로고침해 주세요 (오래된 파일이 캐시에 남아 있을 수 있습니다)</b></div>
   <div class="howto">
     <div><b>키보드·마우스</b>WASD 이동 · Shift 회피 · 우클릭 대쉬 · 좌클릭 공격 · 좌클릭 꾹(0.5초) 강공격 · Space 점프 · 공중에서 좌클릭 점프 공격 · 공중에서 Ctrl+좌클릭 점프 강공격 · Q·E 스킬 · R 궁극기 · Tab 붓/검 전환(연우) · C 가드 · Z·X·V 공동 오의 · 1·2·3 교대(연우·연하·매향) · F 아이템 줍기 · M 지도 · Esc 설정 · ` 마스터 모드(테스트)</div>
     <div><b>터치</b>왼쪽 화면을 끌어서 이동 · 공격 버튼 탭 = 공격, 꾹 = 강공격 · 점프 후 공격 = 점프 공격, 점프 후 꾹 = 점프 강공격 · 왼쪽 파티 칸을 누르면 교대</div>
@@ -108,7 +111,7 @@
   <h2 id="resTitle"></h2>
   <div id="resGrade"></div>
   <div id="resStats"></div>
-  <button id="retryBtn" class="big">다시 도전</button><button id="titleBtn" class="big alt">보스 선택</button>
+  <button id="nextBtn" class="big" hidden>다음 장 →</button><button id="retryBtn" class="big">다시 도전</button><button id="titleBtn" class="big alt">보스 선택</button>
 </div></div>
 
 <div id="loadErr" hidden>3D 엔진(Three.js)을 불러오지 못했습니다.<br>인터넷 연결을 확인한 뒤 새로고침해 주세요.</div>
@@ -116,29 +119,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <!-- 수정한 파일의 버전을 올릴 때 아래 ?v= 값도 같이 올리면, 휴대폰 브라우저가 예전 파일을 쓰지 않습니다.
      js/assets/ = 배경 · 이펙트 · 무기 · 아바타 (나중에 교체 · 추가할 요소) · js/bosses/ = 보스별 패턴 -->
-<script src="js/version.js?v=0.9"></script>
+<script src="js/version.js?v=1.1"></script>
 <script src="data/config.js?v=0.9"></script>
 <script src="data/skills.js?v=0.9"></script>
-<script src="data/characters.js?v=0.9"></script>
-<script src="data/enemies.js?v=0.9"></script>
-<script src="data/dialog.js?v=0.9"></script>
+<script src="data/characters.js?v=1.1"></script>
+<script src="data/enemies.js?v=1.1"></script>
+<script src="data/dialog.js?v=1.1"></script>
+<script src="data/story.js?v=1.1"></script>
 <script src="data/items.js?v=0.5"></script>
 <script src="js/core.js?v=0.8"></script>
 <script src="js/assets/effects.js?v=0.8"></script>
-<script src="js/assets/background.js?v=0.9"></script>
-<script src="js/assets/weapons.js?v=0.9"></script>
-<script src="js/assets/avatars.js?v=0.9"></script>
-<script src="js/state.js?v=0.9"></script>
-<script src="js/player.js?v=0.9"></script>
-<script src="js/combat.js?v=0.9"></script>
-<script src="js/enemies.js?v=0.9"></script>
-<script src="js/boss.js?v=0.9"></script>
-<script src="js/bosses/baekjin.js?v=0.9"></script>
-<script src="js/bosses/cheonjehyeok.js?v=0.9"></script>
-<script src="js/party.js?v=0.9"></script>
+<script src="js/assets/background.js?v=1.1"></script>
+<script src="js/assets/weapons.js?v=1.1"></script>
+<script src="js/assets/avatars.js?v=1.1"></script>
+<script src="js/state.js?v=1.1"></script>
+<script src="js/player.js?v=1.0"></script>
+<script src="js/combat.js?v=1.1"></script>
+<script src="js/enemies.js?v=1.1"></script>
+<script src="js/boss.js?v=1.1"></script>
+<script src="js/bosses/baekjin.js?v=1.0"></script>
+<script src="js/bosses/cheonjehyeok.js?v=1.0"></script>
+<script src="js/bosses/zayeong.js?v=1.0"></script>
+<script src="js/bosses/igyeom.js?v=1.0"></script>
+<script src="js/bosses/sahyeon.js?v=1.0"></script>
+<script src="js/bosses/wollyeong.js?v=1.0"></script>
+<script src="js/bosses/simwon.js?v=1.1"></script>
+<script src="js/bosses/flames.js?v=1.1"></script>
+<script src="js/bosses/baekmyeong.js?v=1.1"></script>
+<script src="js/party.js?v=1.0"></script>
 <script src="js/items.js?v=0.5"></script>
 <script src="js/master.js?v=0.9"></script>
-<script src="js/ui.js?v=0.9"></script>
-<script src="js/main.js?v=0.9"></script>
+<script src="js/ui.js?v=1.1"></script>
+<script src="js/main.js?v=1.1"></script>
 </body>
 </html>

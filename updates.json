@@ -1,8 +1,104 @@
 {
   "project": "MFT 블루잉크 : 천년청묵 — 전투 체험판",
-  "currentVersion": "v0.9",
+  "currentVersion": "v1.1",
   "rule": "새 버전을 만들 때마다 updates 맨 앞에 항목을 추가합니다. files.added = 새로 생긴 파일, files.changed = 내용이 바뀌어 버전이 올라간 파일, files.removed = 삭제된 파일",
   "updates": [
+    {
+      "version": "v1.1",
+      "date": "2026-11-20",
+      "title": "심원회 · 백명신궁 보스 추가 · 태초삼원 제외",
+      "changes": [
+        "태초삼원(이그드라실 · 천묵 · 현원/원시) 보스를 보스 목록과 스토리에서 제외",
+        "심원회 5(드래곤 하트 파편 소유자): 윤재(에테르 결절 · 에테르 차단 봉인 · 영로 흡수) · 설령(치우침 · 균형 회복 · 침식도 정화) · 무하(방어 습관 기록 · 기억 재연 · 기억 봉인) · 연휘(이동 예측 · 인과 연결) · 도윤(경계 결계 · 전장 축소 · 경계 분할)",
+        "백명신궁 화염의 존재 8 중간 보스: 백린(천소) · 청휘(정화) · 적섬(단절) · 녹령(생명 회복) · 자요(공간 조작) · 황뢰(에너지 확장) · 홍악(압축 · 증폭) · 흑랑(잔상)",
+        "구야: 비행(근접 무효) · 적염 급강하 · 고사 파동 · 기억 수집 까마귀 · 연하의 적안 약점 노출",
+        "하야: 옥토 4연격(초승달 · 반달 공간 왜곡 · 보름달 청염 폭발 · 삭망 백지화 참격) · 청염의 백지화(예고 · HUD 지워짐, 패링으로 복원)",
+        "백야(최종): 침식기 → 완전 재앙화 · 칠흑 비늘 결계(녹기현경 · 녹기쌍룡 · 삼라만화) · 설정집 최종전 대사(매향 · 연하) · 공백의 심연 즉사기 · 격파 시 순백 회복",
+        "스토리 모드 23장으로 확장, 보스 목록에 세력별 묶음 제목",
+        "짐승형 보스 모델(용 · 사자 · 표범 · 선영 · 이형 · 치타 · 멧돼지 · 늑대 · 삼족오) · 무대 테마 5종 추가",
+        "공용 공격 틀(bCone · bLine · bRain · bNova) · 보스 상태 글자(BOSS_STATE) · 결계 파쇄(BOSS_BREAK) 정리"
+      ],
+      "files": {
+        "added": [
+          "js/bosses/simwon.js",
+          "js/bosses/flames.js",
+          "js/bosses/baekmyeong.js"
+        ],
+        "changed": [
+          "index.html",
+          "README.md",
+          "updates.json",
+          "css/style.css",
+          "data/characters.js",
+          "data/enemies.js",
+          "data/dialog.js",
+          "data/story.js",
+          "js/version.js",
+          "js/assets/background.js",
+          "js/assets/weapons.js",
+          "js/assets/avatars.js",
+          "js/state.js",
+          "js/combat.js",
+          "js/enemies.js",
+          "js/boss.js",
+          "js/ui.js",
+          "js/main.js"
+        ],
+        "removed": [
+          "js/bosses/taecho.js"
+        ]
+      }
+    },
+    {
+      "version": "v1.0",
+      "date": "2026-11-20",
+      "title": "스토리 모드 · 5대 가문 전체 · 월백 가문 · 태초삼원 보스 추가",
+      "changes": [
+        "타이틀 화면 위쪽이 잘리고 보스 목록이 안 보일 수 있던 문제 수정 · 오래된 파일 캐시 방지 · 목록을 못 불러오면 안내 문구 표시",
+        "스토리 모드: 청옥림 → 설백산 → 자운곡 → 청회원 → 연분홍 늪 → 구해 마궁 → 월계 → 이그드라실 8장, 장 시작 서술 · 다음 장 · 이어하기(저장) · 엔딩",
+        "신규 보스 자영(운자 가주): 거울 환영무 · 역환산 폭발 · 위상 역전 · 주작의 거울 룬",
+        "신규 보스 이겸(은리 가주): 금제(공격/이동/전환 금지) · 단죄의 사슬 · 경계 단죄 · 절대 법정 · 단죄 룬(번개 패링)",
+        "신규 보스 사현(사미 가주): 그림자 잠행 · 등 뒤 기습 · 중독 · 칠흑 독 수렁 · 현무의 음영 분신 · 동시 암살",
+        "신규 보스 월령(월백 가주 · 월계 수장): 거울 굴절 투척 · 월령의 잔영 · 만월 파쇄 · 기억의 거울 인과역전 · 연하 개입",
+        "신규 보스 태초삼원(이그드라실 · 천묵 · 현원/원시): 3형태 · 근원 파동 · 강체 돌진 · 뿌리 결계 · 정령 소환 · 태초의 심판",
+        "무대 테마 5종 추가(자운곡 · 청회원 · 연분홍 늪 · 월계 · 이그드라실)",
+        "보스 룬(가드파쇄 · 붓 · 패링 전용)과 보스 졸개를 공용 기능으로 정리"
+      ],
+      "files": {
+        "added": [
+          "data/story.js",
+          "js/bosses/zayeong.js",
+          "js/bosses/igyeom.js",
+          "js/bosses/sahyeon.js",
+          "js/bosses/wollyeong.js",
+          "js/bosses/taecho.js"
+        ],
+        "changed": [
+          "index.html",
+          "README.md",
+          "updates.json",
+          "css/style.css",
+          "data/characters.js",
+          "data/enemies.js",
+          "data/dialog.js",
+          "js/version.js",
+          "js/assets/background.js",
+          "js/assets/weapons.js",
+          "js/assets/avatars.js",
+          "js/state.js",
+          "js/player.js",
+          "js/combat.js",
+          "js/enemies.js",
+          "js/boss.js",
+          "js/bosses/baekjin.js",
+          "js/bosses/cheonjehyeok.js",
+          "js/party.js",
+          "js/ui.js",
+          "js/main.js"
+        ],
+        "removed": []
+      }
+    },
     {
       "version": "v0.9",
       "date": "2026-11-20",
