@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/party.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/party.js · v1.0
    교대 시스템 — 연우 · 연하 · 매향 (1·2·3 교대, 교대 진입 공격, 쓰러지면 자동 교대, 지원 개입)
    연하·매향의 전투 기술 · 매화 진. 수치는 data/skills.js · data/characters.js · data/config.js */
 'use strict';
@@ -21,7 +21,7 @@ function loadChar(id){const m=PARTY[id];P.char=id;P.hp=m.hp;P.maxHp=m.maxHp;P.ul
   if(id==='yeonwoo'){brushW.visible=P.mode==='brush';swordW.visible=P.mode==='sword';}}
 function trySwap(idx){const id=PARTY_ORDER[idx];if(!id||!state.running||state.paused||state.mapOpen||dialogOpen||P.dead||state.win)return false;
   if(id===P.char||PARTY[id].hp<=0||P.cds.swap>0||(P.act&&P.act.name==='ult')){flashSwap(idx);return false;}
-  doSwap(id,false);return true;}
+  if(state.lockTagT>0){popNum(P.x,2.6,P.z,'교대 봉인 — 기억의 거울','immune');flashSwap(idx);return false;}state.lastSwT=state.time;doSwap(id,false);return true;}
 function doSwap(id,forced){const ox=P.x,oz=P.z;saveChar();if(PARTY[P.char].hp>0&&!forced)burst(ox,1.1,oz,CHARACTERS[P.char].color,10,4,0.4,0.5);
   loadChar(id);P.cds.swap=CONFIG.party.swapCd;P.act=null;P.queue=null;P.stagger=0;P.lastIdx=-1;P.comboT=0;P.iframe=Math.max(P.iframe,CONFIG.party.swapIframe);if(forced)P.invuln=Math.max(P.invuln,1.5);
   stats.swaps++;tagIn(id);if(!forced)say(CHARACTERS[id].name,DIALOG.swapLines[id],1.6);}

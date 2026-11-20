@@ -1,9 +1,9 @@
-/* MFT 블루잉크 : 천년청묵 · js/boss.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/boss.js · v1.1
    보스 공통(등장 · 행동 · 연출 · 격파) + 청류 패턴 · 페이즈 · 인화 룬
    다른 보스는 js/bosses/ 폴더 — BOSS_INIT · BOSS_AI · BOSS_ANIM 목록에 등록 */
 'use strict';
 /* ================= 보스 공통 ================= */
-const BOSS_INIT={},BOSS_AI={},BOSS_ANIM={},BOSS_DEFEAT={};
+const BOSS_INIT={},BOSS_AI={},BOSS_ANIM={},BOSS_DEFEAT={},BOSS_HIT={},BOSS_BREAK={},BOSS_STATE={};   // BOSS_STATE[id](b) → 보스 상태 글자(없으면 기본)
 function bossFacingP(b,deg){const a=Math.atan2(P.x-b.x,P.z-b.z);return Math.abs(angDiff(a,b.ang))<=deg*DEG;}
 /* 이동(돌진) · 기절 공통 처리 — 기절 중이면 true */
 function bossCommon(b,dt){if(b.dash){const D=b.dash,rem=D.t;D.t-=dt;const k=rem>0?Math.min(1,dt/rem):1;b.x+=(D.x-b.x)*k;b.z+=(D.z-b.z)*k;if(D.t<=0)b.dash=null;}
@@ -16,6 +16,32 @@ function animHumanBoss(b,dt){const u=b.mesh.userData;let rx=-0.3+Math.sin(b.walk
   if(b.swingT>0){const k=1-b.swingT/0.25;u.piv.rotation.x=-PI/2;u.piv.rotation.y=-1.6+3.2*k;}
   else{if(pending){rx=-2.7;ry=0;}const k=Math.min(1,dt*18);u.piv.rotation.x+=(rx-u.piv.rotation.x)*k;u.piv.rotation.y+=(ry-u.piv.rotation.y)*k;}
   b.mesh.rotation.x=b.stun>0?0.25:0;u.stars.visible=b.stun>0;if(b.stun>0)u.stars.rotation.y+=dt*5;bossArmorFx(b);}
+/* 보스 파회(룬 · 결계 붕괴) 공통 — 룬 · 졸개 정리 + 긴 기절 + 받는 피해 증가 */
+function bossShatter(b,stun,label,msg){b.barrier=false;b.runeDone=true;for(const e of enemies)if(!e.dead&&e!==b&&(isRune(e)||e.type==='minion')){e.silent=true;killE(e,true);}
+  b.stun=stun;b.broken=stun+1;b.action=null;cancelStrikes(b);b.armorT=0;b.hidden=false;if(b.mesh)b.mesh.visible=true;stats.runeBreak=(stats.runeBreak||0)+1;
+  showCut(label||'파회');hitstop=0.25;shake(0.7);burst(b.x,1.6,b.z,0x6fe0b8,30,9,0.5);banner(msg||(BOSSES[b.id].name+' 긴 기절! 받는 피해 '+(BOSSES[b.id].brokenDamageMul||1.5)+'배'),4,'big');spawnItem('yeongro',b.x+1.8,b.z);}
+/* ---------- 공용 공격 틀 (v1.1) — o: r · half · len · w · tell · dmg · type · col(예고 색) · fx(궤적 색) · armor · n(연속 수) · gap · lunge · name · onHitP · onFire · opt ---------- */
+function _fire(o,s){if(o.onFire)o.onFire(s);}
+function bCone(b,o){const n=o.n||1,gap=o.gap||0.7,ev=[];for(let i=0;i<n;i++)ev.push([i*gap,()=>{faceP(b);let x=b.x,z=b.z;if(o.lunge){const d=dist2(P,b);if(d>2){const L=Math.min(d-1.6,o.lunge);x=clamp(b.x+Math.sin(b.ang)*L,-13.5,13.5);z=clamp(b.z+Math.cos(b.ang)*L,-13.5,13.5);b.dash={x,z,t:0.18};}}
+  strike({owner:b,kind:'cone',x,z,ang:b.ang,r:o.r||4,half:(o.half||60)*DEG,tell:o.tell||0.55,dmg:o.dmg,type:o.type,color:o.col,onHitP:o.onHitP,opt:o.opt,onFire:s=>{arcTrail(s.x,s.z,s.ang,s.r,s.half,o.fx||0xffffff,1.2,0.8);_fire(o,s);}});}]);
+  if(o.armor)b.armorT=o.armor;bAct(b,o.act||'cone',(o.dur||1.0)+(n-1)*gap,ev);if(o.name)bossCall(o.name);}
+function bLine(b,o){const n=o.n||1,gap=o.gap||0.8,ev=[];for(let i=0;i<n;i++)ev.push([i*gap,()=>{faceP(b);const a=b.ang+(o.spread?(i-(n-1)/2)*o.spread:0),L=o.len||10;
+  strike({owner:b,kind:'line',x:b.x,z:b.z,ang:a,len:L,w:o.w||2,tell:o.tell||0.7,dmg:o.dmg,type:o.type,color:o.col,onHitP:o.onHitP,opt:o.opt,
+    onFire:s=>{if(o.charge)b.dash={x:clamp(s.x+Math.sin(a)*(L-1),-13,13),z:clamp(s.z+Math.cos(a)*(L-1),-13,13),t:0.25};lineFx(s.x,s.z,s.ang,s.len,s.w*0.6,o.fx||0xffffff,0.45,0.5);if(o.charge)shake(0.3);_fire(o,s);}});}]);
+  if(o.armor)b.armorT=o.armor;bAct(b,o.act||'line',(o.dur||1.2)+(o.spread?0:(n-1)*gap),o.spread?ev.map(e=>[0,e[1]]):ev);if(o.name)bossCall(o.name);}
+function bRain(b,o){const ev=[[0,()=>{for(let i=0;i<(o.n||4);i++){const x=clamp(P.x+(i?rand(-(o.spread||4),o.spread||4):0),-13.5,13.5),z=clamp(P.z+(i?rand(-(o.spread||4),o.spread||4):0),-13.5,13.5);
+  strike({owner:b,kind:'circle',x,z,r:o.r||1.6,tell:(o.tell||0.85)+i*(o.stagger||0.1),dmg:o.dmg,type:o.type,color:o.col,onHitP:o.onHitP,opt:o.opt,onFire:s=>{burst(s.x,1.2,s.z,o.fx||0xffffff,10,6,0.4);ringFx(s.x,s.z,0.4,s.r+0.2,o.fx||0xffffff,0.4);_fire(o,s);}});}}]];
+  bAct(b,o.act||'rain',o.dur||1.6,ev);if(o.name)bossCall(o.name);}
+function bNova(b,o){if(o.armor)b.armorT=o.armor;bAct(b,o.act||'nova',o.dur||1.7,[[0,()=>{strike({owner:b,kind:'circle',x:b.x,z:b.z,r:o.r||4.5,tell:o.tell||0.9,dmg:o.dmg,type:o.type,color:o.col,onHitP:o.onHitP,opt:o.opt,
+  onFire:s=>{ringFx(s.x,s.z,0.6,s.r+0.4,o.fx||0xffffff,0.6,0.3);burst(s.x,1.6,s.z,o.fx||0xffffff,24,8,0.5);shake(0.4);if(o.ring)spawnRing(s.x,s.z,{dmg:o.ringDmg||o.dmg,col:o.fx,sp:o.ringSp||7,max:12});_fire(o,s);}});}]]);if(o.name)bossCall(o.name);}
+function bPhase(b,name,col,msg){b.p2=true;b.invulnT=1.4;cancelStrikes(b);showCut(name);bAct(b,'p2',1.6,[[0.7,()=>{ringFx(b.x,b.z,1,10,col,0.7,0.2,0.9);burst(b.x,2,b.z,col,28,8,0.5);shake(0.4);}]]);if(msg)banner(msg,3.5);}
+/* 짐승형 보스 공통 연출 (몸 흔들림 · 공격 직전 몸 숙임 · 기절 별 · 강체 · 불꽃 기운) */
+function animBeast(b,dt){const u=b.mesh.userData;const pending=strikes.some(s=>s.owner===b);const hop=b.fly?1.6+Math.sin(state.time*3)*0.3:Math.abs(Math.sin(b.walk*0.6))*0.12;
+  u.body.position.y=(u.baseY||0)+hop;u.body.rotation.x=pending?-0.18:(b.stun>0?0.3:0);if(u.aura)u.aura.material.opacity=(b.p2?0.22:0.12)+0.06*Math.sin(state.time*8);
+  if(u.wings)for(const w of u.wings)w.rotation.z=w.userData.s*(0.3+Math.sin(state.time*(b.fly?10:3))*0.35);
+  u.stars.visible=b.stun>0;if(b.stun>0)u.stars.rotation.y+=dt*5;bossArmorFx(b);}
+/* 보스 주위 원형 배치 좌표 */
+function ringPts(n,r,off=0){const a=[];for(let i=0;i<n;i++){const t=off+i*TAU/n;a.push([Math.cos(t)*r,Math.sin(t)*r]);}return a;}
 function bossArmorFx(b){const u=b.mesh.userData;if(u.armorM)u.armorM.material.opacity=b.armorT>0?0.22+0.1*Math.sin(state.time*16):0;}
 
 /* ================= 보스 : 청류 ================= */

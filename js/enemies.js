@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/enemies.js · v1.1
    적 공통 · 잡몹 AI · 공격 판정 · 투사체 */
 'use strict';
 /* ================= 적 공통 ================= */
@@ -8,7 +8,7 @@ function setMats(e,mats){e.mats=mats;e.baseE=mats.map(m=>m.emissive.getHex());}
 function barSprite(e,w){const c=document.createElement('canvas');c.width=128;c.height=40;const tex=new T.CanvasTexture(c);const s=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,depthWrite:false,depthTest:false}));s.scale.set(w,w*40/128,1);s.renderOrder=10;e.bar={s,c,tex};e.barDirty=true;scene.add(s);}
 function drawBar(e){const{c,tex}=e.bar,g=c.getContext('2d');g.clearRect(0,0,128,40);g.fillStyle='rgba(20,18,16,0.75)';g.fillRect(4,26,120,10);g.fillStyle='#b8323c';g.fillRect(6,28,116*Math.max(0,e.hp/e.maxHp),6);
   if(e.stgMax){g.fillStyle=e.groggy>0?'#f2d36b':'rgba(20,18,16,0.5)';g.fillRect(4,36,120,4);if(e.groggy<=0){g.fillStyle='#d9a330';g.fillRect(5,37,118*Math.max(0,e.stg/e.stgMax),2);}}
-  if(e.type==='arcrune'){tex.needsUpdate=true;e.barDirty=false;return;}
+  if(isRune(e)){tex.needsUpdate=true;e.barDirty=false;return;}
   for(let i=0;i<5;i++){const x=24+i*20,y=12;g.beginPath();g.arc(x,y,7,0,TAU);g.fillStyle=i<e.stacks?'#141414':'rgba(20,18,16,0.18)';g.fill();if(i<e.stacks){g.strokeStyle='#5fd6a8';g.lineWidth=2.5;g.stroke();}}tex.needsUpdate=true;e.barDirty=false;}
 function rootRing(e,r){const m=new T.Mesh(flatGeo(new T.RingGeometry(r*0.9,r*1.25,24)),MB(0x141414,0.75));m.visible=false;scene.add(m);e.rootM=m;}
 function spawnFx(x,z,col=0x141414){burst(x,0.6,z,col,16,6,0.5,0.6);ringFx(x,z,0.4,2.6,col,0.5);}
@@ -22,7 +22,23 @@ function spawnBoss(id){id=id||'cheongryu';const D=BOSSES[id];const e=baseEnemy('
   boss=e;$('bName').textContent=D.name;$('bTitle').textContent=D.title;$('bhud').hidden=false;spawnFx(0,-11,id==='cheonjehyeok'?0x5a0a10:id==='baekjin'?0xe8edf2:0x2b6b8a);if(id==='cheongryu')waterBurst(0,-11);
   if(BOSS_INIT[id])BOSS_INIT[id](e);return e;}
 /* 백진 아크 룬 · 기사 환영 */
-function spawnArcRune(x,z){const e=baseEnemy('arcrune',x,z,BOSSES.baekjin.runeHp,0.75);const A=AVATARS.arcrune();e.mesh=A.g;setMats(e,A.mats);e.body=A.body;scene.add(A.g);barSprite(e,1.3);e.barY=3.0;spawnFx(x,z,0xf2d36b);return e;}
+function isRune(e){return e.type==='brune';}
+/* 보스 룬(공용) — req: 'gb'(가드파쇄만) · 'brush'(붓 공격만) · 'parry'(패링으로만) · 'any' */
+const RUNE_REQ={gb:'가드파쇄 공격만 통함',brush:'붓(먹물) 공격만 통함',parry:'패링으로만 부술 수 있음',any:''};
+function spawnBossRune(x,z,o){const e=baseEnemy('brune',x,z,o.hp||3,o.r||0.75);e.req=o.req||'any';e.label=o.label||'룬';e.onBreak=o.onBreak;e.col=o.col||0xf2d36b;
+  const A=(AVATARS[o.avatar||'arcrune'])(o);e.mesh=A.g;setMats(e,A.mats);e.body=A.body;scene.add(A.g);barSprite(e,1.3);e.barY=3.0;spawnFx(x,z,e.col);return e;}
+function runeHit(e,src,extra){const gb=extra&&extra.gb,pierce=extra&&extra.pierce;let ok=pierce||e.req==='any'||(e.req==='gb'&&gb)||(e.req==='brush'&&P.char==='yeonwoo'&&P.mode==='brush'&&src!=='counter')||(e.req==='parry'&&src==='parry');
+  if(!ok){if(state.time-(e.noT||0)>0.8){e.noT=state.time;popNum(e.x,2.6,e.z,RUNE_REQ[e.req],'immune');}return false;}
+  e.hp-=1;e.flash=0.1;e.barDirty=true;burst(e.x,1.5,e.z,e.col,12,6,0.4);popNum(e.x,2.6,e.z,e.label+' 균열 '+(e.maxHp-e.hp)+'/'+e.maxHp,'info');if(e.hp<=0)killE(e);return true;}
+function spawnArcRune(x,z){return spawnBossRune(x,z,{hp:BOSSES.baekjin.runeHp,req:'gb',label:'아크 룬',avatar:'arcrune',col:0xf2d36b,onBreak:bjRuneDestroyed});}
+/* 보스 졸개(공용) — 다가가서 부채꼴 베기. o: hp · speed · dmg · col · avatar · type */
+function spawnMinion(x,z,o){const e=baseEnemy('minion',x,z,o.hp||40,o.r||0.55);e.def=o;e.stgMax=e.stg=o.stagger||20;const A=(AVATARS[o.avatar||'phantom'])(o);e.mesh=A.g;setMats(e,A.mats);e.body=A.body;scene.add(A.g);
+  barSprite(e,1.2);e.barY=2.4;e.atkT=rand(0.8,1.6);e.onHitE=o.onHitE;e.onDeath=o.onDeath;spawnFx(x,z,o.col||0xdfe8f2);return e;}
+function aiMinion(e,dt){if(e.groggy>0||e.root>0||e.stun>0||e.lift>0)return;const o=e.def;if(o.ai){o.ai(e,dt);return;}const dx=P.x-e.x,dz=P.z-e.z,d=Math.hypot(dx,dz)||1;
+  e.ang=lerpAng(e.ang,Math.atan2(dx,dz),1-Math.exp(-8*dt));e.atkT-=dt;
+  if(d>2.0){const sp=(o.speed||3.6)*slowMul(e);e.x+=dx/d*sp*dt;e.z+=dz/d*sp*dt;}
+  if(e.atkT<=0&&d<3.2&&!strikes.some(s=>s.owner===e)){e.atkT=o.atkCd||2.6;strike({owner:e,kind:'cone',x:e.x,z:e.z,ang:e.ang,r:2.6,half:55*DEG,tell:o.tell||0.6,dmg:o.dmg||9,type:o.atkType||'normal',color:o.atkCol,onHitP:o.onHitP,
+    onFire:s=>{arcTrail(s.x,s.z,s.ang,2.6,s.half,o.col||0xdfe8f2,0.9,0.6);}});}}
 function spawnPhantom(x,z){const e=baseEnemy('phantom',x,z,ENEMIES.phantom.hp,0.55);const A=AVATARS.phantom();e.mesh=A.g;setMats(e,A.mats);e.body=A.body;scene.add(A.g);barSprite(e,1.2);e.barY=2.4;e.fuse=0;rootRing(e,0.7);spawnFx(x,z,0xdfe8f2);return e;}
 function alive(){return enemies.filter(e=>!e.dead);}
 function inFog(e){for(const f of enemies)if(f.type==='eater'&&!f.dead&&Math.hypot(e.x-f.x,e.z-f.z)<FOG_R)return true;return false;}
@@ -37,10 +53,10 @@ function updateEnemy(e,dt){
   e.t+=dt;e.root-=dt;e.flash-=dt;if(e.slow>0)e.slow-=dt;if(e.vuln>0){e.vuln-=dt;if(e.vulnM){e.vulnM.visible=e.vuln>0;e.vulnM.position.set(e.x,(e.y||0)+(e.type==='boss'?3.4:2.2),e.z);}}
   if(e.stacks>0){e.stackT-=dt;if(e.stackT<=0){e.stacks=0;e.barDirty=true;}}
   updateEnemyCombat(e,dt);
-  if(e.type==='arcrune'){e.stun=0;e.body.rotation.y+=dt*1.2;}
+  if(isRune(e)){e.stun=0;e.body.rotation.y+=dt*1.2;}
   else if(e.type!=='boss'){e.stun-=dt;e.x+=e.kx*dt;e.z+=e.kz*dt;const k=Math.exp(-7*dt);e.kx*=k;e.kz*=k;
     if(e.pull){e.pull.t-=dt;const dx=e.pull.x-e.x,dz=e.pull.z-e.z,d=Math.hypot(dx,dz);if(d>0.3){const v=Math.min(d,d/Math.max(e.pull.t,0.05)*dt);e.x+=dx/d*v;e.z+=dz/d*v;}if(e.pull.t<=0)e.pull=null;}}
-  if(e.type==='rusher'||e.type==='phantom')aiRusher(e,dt);else if(e.type==='eater')aiEater(e,dt);else if(e.type==='boss')aiBoss(e,dt);
+  if(e.type==='minion')aiMinion(e,dt);else if(e.type==='rusher'||e.type==='phantom')aiRusher(e,dt);else if(e.type==='eater')aiEater(e,dt);else if(e.type==='boss')aiBoss(e,dt);
   if(e.dead)return;
   clampArena(e,e.r);
   let ly=0;if(e.lift>0){e.lift-=dt;ly=Math.sin(clamp(1-e.lift/0.6,0,1)*PI)*1.2;}
@@ -71,8 +87,11 @@ function strike(o){o.type=o.type||'normal';const TY=ATTACK_TYPES[o.type]||ATTACK
   if(o.type!=='normal'&&o.type!=='heavy'){if(PARTY&&PARTY.yeonha.hp>0){popNum(o.x+Math.sin(o.ang||0)*1.5,2.4,o.z+Math.cos(o.ang||0)*1.5,'⚠ '+TY.name,'warn');}
     if(!flags['ty_'+o.type]){flags['ty_'+o.type]=1;const tips={break:'보라색 범위 — 가드 불가! 회피(스웨이)로 피하세요',grab:'잡기 — 가드 불가! 회피(스웨이)로 피하세요',unsway:'주황색 범위 — 회피 무적으로 못 피함! 범위 밖으로 나가거나 가드 · 점프',lethal:'검은 범위 — 즉사기! 범위 밖으로 피하거나 무적(회피 · 궁극기)으로 버티세요'};if(tips[o.type])banner(tips[o.type]+(PARTY&&PARTY.yeonha.hp>0?' (연하 · 오드아이의 통찰)':''),3.5);}}
   if(o.kind==='cone')geo=sectorGeo(o.r,o.half);else if(o.kind==='circle')geo=flatGeo(new T.CircleGeometry(o.r,40));else{geo=new T.PlaneGeometry(o.w,o.len);geo.translate(0,-o.len/2,0);flatGeo(geo);}
-  const g=new T.Group();g.add(new T.Mesh(geo,MB(col,0.2)));const inner=new T.Mesh(geo,MB(col,0.38));inner.scale.setScalar(0.01);g.add(inner);
-  g.position.set(o.x,0.04+(strikes.length%10)*0.003,o.z);g.rotation.y=o.ang||0;scene.add(g);o.g=g;o.geo=geo;o.t=0;strikes.push(o);return o;}
+  const bk=state.blankT>0?0.1:1;   // 하야 — 청염의 백지화: 예고 범위가 거의 보이지 않음
+  const g=new T.Group();g.add(new T.Mesh(geo,MB(col,0.2*bk)));const inner=new T.Mesh(geo,MB(col,0.38*bk));inner.scale.setScalar(0.01);g.add(inner);
+  g.position.set(o.x,0.04+(strikes.length%10)*0.003,o.z);g.rotation.y=o.ang||0;scene.add(g);o.g=g;o.geo=geo;o.t=0;strikes.push(o);
+  if(o.owner&&o.owner.echoStrikes&&!o.isEcho){const src=Object.assign({},o);later(o.owner.echoDelay||1.0,()=>{if(!o.owner.dead&&!state.win)strike(Object.assign(src,{isEcho:true,g:null,color:0x2a4a6a,tell:Math.max(0.4,src.tell*0.8)}));});}   // 흑랑 — 잔상
+  return o;}
 function inShape(o,px,pz,pr=0.35){const dx=px-o.x,dz=pz-o.z,d=Math.hypot(dx,dz);if(o.kind==='circle')return d<=o.r+pr;
   if(o.kind==='cone'){if(d>o.r+pr)return false;if(d<0.9)return true;return Math.abs(angDiff(Math.atan2(dx,dz),o.ang))<=o.half+pr/Math.max(d,0.5);}
   const s=Math.sin(o.ang),c=Math.cos(o.ang),al=dx*s+dz*c,sd=dx*c-dz*s;return al>=-pr&&al<=o.len+pr&&Math.abs(sd)<=o.w/2+pr;}
@@ -96,11 +115,11 @@ function updateProj(dt){for(let i=projs.length-1;i>=0;i--){const p=projs[i];p.t+
   if(!P.dead&&Math.hypot(P.x-p.x,P.z-p.z)<p.r+0.4){hurtPlayer(p.dmg,{type:'normal',src:{x:p.x-p.vx,z:p.z-p.vz}});burst(p.x,p.y,p.z,0x3a0a10,8,4,0.35);removeProj(i);continue;}
   if(p.t>p.life||Math.hypot(p.x,p.z)>ARENA+2)removeProj(i);}}
 function addPuddle(x,z){const m=new T.Mesh(decalGeo,new T.MeshBasicMaterial({map:puddleTex,transparent:true,depthWrite:false,opacity:0.9}));m.rotation.x=-PI/2;m.position.set(x,0.06,z);m.scale.setScalar(3.4);scene.add(m);puddles.push({x,z,r:1.6,t:7,m});}
-function updatePuddles(dt){for(let i=puddles.length-1;i>=0;i--){const p=puddles[i];p.t-=dt;if(p.kind==='flame'&&p.t>0&&Math.hypot(P.x-p.x,P.z-p.z)<p.r&&P.y<0.5)burnPlayer(p.dps,dt);if(p.t<1)p.m.material.opacity=0.9*Math.max(0,p.t);if(p.t<=0){scene.remove(p.m);p.m.material.dispose();puddles.splice(i,1);}}}
+function updatePuddles(dt){for(let i=puddles.length-1;i>=0;i--){const p=puddles[i];p.t-=dt;if(p.dps&&p.t>0&&Math.hypot(P.x-p.x,P.z-p.z)<p.r&&P.y<0.5){burnPlayer(p.dps,dt);if(p.kind==='swamp')P.poison=Math.max(P.poison||0,2);}if(p.t<1)p.m.material.opacity=0.9*Math.max(0,p.t);if(p.t<=0){scene.remove(p.m);p.m.material.dispose();puddles.splice(i,1);}}}
 function updateClones(dt){for(let i=clones.length-1;i>=0;i--){const c=clones[i];c.t-=dt;c.mt.opacity=0.35+0.2*Math.sin(state.time*30);
   if(c.t<=0){for(const e of enemies)if(!e.dead&&Math.hypot(e.x-c.x,e.z-c.z)<3.6+e.r){const r=pdmg(6);if(dealE(e,r.v,r.crit,'clone'))mark(e,1);}
     ringFx(c.x,c.z,0.5,3.6,0x1a1a1a,0.4);burst(c.x,1,c.z,0x141414,14,6);purify(c.x,c.z,1.6);scene.remove(c.g);disposeObj(c.g,true);clones.splice(i,1);}}}
 function updateZones(dt){for(let i=zones.length-1;i>=0;i--){const z=zones[i];z.t-=dt;z.m.material.opacity=0.15*Math.min(1,z.t/1.5);if(z.t<=0){scene.remove(z.m);disposeObj(z.m,true);zones.splice(i,1);}}}
 function separate(){const al=alive();
-  if(P.iframe<=0&&!P.dead)for(const e of al){const dx=P.x-e.x,dz=P.z-e.z,d=Math.hypot(dx,dz),min=e.r+0.4;if(d<min&&d>0.001){const push=min-d,nx=dx/d,nz=dz/d;if(e.type==='boss'||e.type==='arcrune'){P.x+=nx*push;P.z+=nz*push;}else{P.x+=nx*push*0.5;P.z+=nz*push*0.5;e.x-=nx*push*0.5;e.z-=nz*push*0.5;}}}
-  for(let i=0;i<al.length;i++)for(let j=i+1;j<al.length;j++){const a=al[i],b=al[j],dx=a.x-b.x,dz=a.z-b.z,d=Math.hypot(dx,dz),min=a.r+b.r;if(d<min&&d>0.001){const push=(min-d)/2,nx=dx/d,nz=dz/d;const wa=(a.type==='boss'||a.type==='arcrune')?0:1,wb=(b.type==='boss'||b.type==='arcrune')?0:1;a.x+=nx*push*wa*(wb?1:2);a.z+=nz*push*wa*(wb?1:2);b.x-=nx*push*wb*(wa?1:2);b.z-=nz*push*wb*(wa?1:2);}}}
+  if(P.iframe<=0&&!P.dead)for(const e of al){const dx=P.x-e.x,dz=P.z-e.z,d=Math.hypot(dx,dz),min=e.r+0.4;if(!e.hidden&&d<min&&d>0.001){const push=min-d,nx=dx/d,nz=dz/d;if(e.type==='boss'||isRune(e)){P.x+=nx*push;P.z+=nz*push;}else{P.x+=nx*push*0.5;P.z+=nz*push*0.5;e.x-=nx*push*0.5;e.z-=nz*push*0.5;}}}
+  for(let i=0;i<al.length;i++)for(let j=i+1;j<al.length;j++){const a=al[i],b=al[j],dx=a.x-b.x,dz=a.z-b.z,d=Math.hypot(dx,dz),min=a.r+b.r;if(d<min&&d>0.001){const push=(min-d)/2,nx=dx/d,nz=dz/d;const wa=(a.type==='boss'||isRune(a))?0:1,wb=(b.type==='boss'||isRune(b))?0:1;a.x+=nx*push*wa*(wb?1:2);a.z+=nz*push*wa*(wb?1:2);b.x-=nx*push*wb*(wa?1:2);b.z-=nz*push*wb*(wa?1:2);}}}

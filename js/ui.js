@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/ui.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/ui.js · v1.1
    (v0.5: 지도 · 설정 · 새 조작 체계 추가)
    HUD · 대화창 · 입력(키보드·마우스·터치) */
 'use strict';
@@ -40,8 +40,8 @@ function updateUI(dt){updateInteractUI();updatePartyHud();
   if(PARTY){setH('lJ1',P.mode==='sword'?'녹기<br>쌍룡':'쌍안<br>연화');}
   if(boss){setS('bstgFill','width',(boss.groggy>0?100:Math.max(0,boss.stg)/boss.stgMax*100).toFixed(1)+'%');setC('bstgFill','groggy',boss.groggy>0);setS('bhpFill','width',(Math.max(0,boss.hp)/boss.maxHp*100).toFixed(1)+'%');setS('bshFill','width',(boss.shield/boss.maxHp*100).toFixed(1)+'%');
     const pips=$('bpips').children;for(let i=0;i<5;i++)setC2(pips[i],i<boss.stacks);
-    let s='';if(boss.dead)s='정화됨';else if(boss.groggy>0)s='무력화 · 받는 피해 '+CONFIG.combat.groggyDamageMul+'배';else if(boss.stun>0)s=boss.broken>0?'기절 · 받는 피해 150%':'기절';else if(boss.barrier)s='아크 방어막 — 무적 · 룬 '+boss.runeCount+'개';else if(boss.armorT>0)s='강체 — 가드파쇄로 끊기';else if(boss.stance>0)s='유수 반격 자세';else if(boss.runeActive)s='청룡의 정화 룬 · 피해 80% 감소 · 먹선 '+runes.filter(r=>r.linked).length+'/3';
-    else if(boss.id==='baekjin')s=(boss.guardDown>0?'방패 내려감 — 공격 기회':'정면 방패 가드')+' · 성기 '+Math.floor(boss.holy)+'%';else if(boss.p3)s='3페이즈 · 즉사기 주의';else if(boss.p2)s=boss.id==='cheonjehyeok'?'2페이즈 · 흑염 각성':'2페이즈 · 청룡의 도류';setT('bstate',s);}
+    let s='';if(boss.dead)s='정화됨';else if(boss.groggy>0)s='무력화 · 받는 피해 '+CONFIG.combat.groggyDamageMul+'배';else if(boss.stun>0)s=boss.broken>0?'기절 · 받는 피해 150%':'기절';else if(boss.barrier)s=(boss.barrierName||'아크 방어막')+' — 무적 · 룬 '+enemies.filter(e=>isRune(e)&&!e.dead).length+'개';else if(BOSS_STATE[boss.id]&&BOSS_STATE[boss.id](boss))s=BOSS_STATE[boss.id](boss);else if(boss.armorT>0)s='강체 — 가드파쇄로 끊기';else if(boss.stance>0)s='유수 반격 자세';else if(boss.runeActive)s='청룡의 정화 룬 · 피해 80% 감소 · 먹선 '+runes.filter(r=>r.linked).length+'/3';
+    else if(boss.id==='baekjin')s=(boss.guardDown>0?'방패 내려감 — 공격 기회':'정면 방패 가드')+' · 성기 '+Math.floor(boss.holy)+'%';else if(boss.p3)s='3페이즈 · 즉사기 주의';else if(boss.p2)s=boss.id==='cheonjehyeok'?'2페이즈 · 흑염 각성':boss.id==='cheongryu'?'2페이즈 · 청룡의 도류':'2페이즈';setT('bstate',s);}
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').style.opacity=0;}
   if(sayT>0){sayT-=dt;if(sayT<=0)$('say').style.opacity=0;}
   if(state.bcallT>0){state.bcallT-=dt;if(state.bcallT<=0)$('bcall').style.opacity=0;}}
@@ -60,6 +60,7 @@ const input={mx:0,mz:0,mag:0,keys:{},guardHeld:false};
 const joy={id:null,ox:0,oy:0,x:0,y:0};
 function press(q){if(!state.running||state.paused||state.mapOpen)return;if(dialogOpen){advanceDialog();return;}if(P.dead||state.win)return;
   if(q==='interact'){if(!interact())flashBtn(q);return;}
+  if(P.seal>0&&(q==='s1'||q==='s2'||q==='sw'||q==='ult')){flashBtn(q);popNum(P.x,2.6,P.z,'봉인 — '+(P.sealName||'단절'),'immune');return;}
   if(!ready(q)){flashBtn(q);if((q==='s1'||q==='s2')&&P.cds[skillId(q[1])]<=0&&P.yr<skillCost(skillId(q[1])))popNum(P.x,2.6,P.z,'영로 부족 ('+skillCost(skillId(q[1]))+' 필요)','info');}P.queue=q;P.queueT=0.35;}
 const BTN={j1:'bJ1',j2:'bJ2',j3:'bJ3',atk:'bAtk',str:'bAtk',jump:'bJump',s1:'bS1',s2:'bS2',dodge:'bDodge',dash:'bDash',sw:'bSw',ult:'bUlt',interact:'bInt'};
 function flashBtn(q){const el=$(BTN[q]);if(!el)return;el.classList.remove('no');void el.offsetWidth;el.classList.add('no');}
@@ -104,6 +105,7 @@ zone.addEventListener('pointermove',e=>{if(e.pointerId!==joy.id)return;let dx=e.
 const jend=e=>{if(e.pointerId!==joy.id)return;joy.id=null;joy.x=joy.y=0;jb.style.display='none';};
 zone.addEventListener('pointerup',jend);zone.addEventListener('pointercancel',jend);
 function readMove(){let mx=0,mz=0;if(joy.id!==null){mx=joy.x;mz=joy.y;}else{const K=input.keys;mx=(K.KeyD||K.ArrowRight?1:0)-(K.KeyA||K.ArrowLeft?1:0);mz=(K.KeyS||K.ArrowDown?1:0)-(K.KeyW||K.ArrowUp?1:0);const m=Math.hypot(mx,mz);if(m>1){mx/=m;mz/=m;}}
+  if(state&&state.invertT>0){mx=-mx;mz=-mz;}
   const m=Math.hypot(mx,mz);input.mx=m<0.15?0:mx;input.mz=m<0.15?0:mz;input.mag=m<0.15?0:Math.min(1,m);}
 
 /* ================= 지도 (M) ================= */

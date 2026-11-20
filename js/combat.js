@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/combat.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/combat.js · v1.1
    전투 판정 — 가드 · 패링(슈아 반격) · 스웨이 · 강체 · 무적 · 방어막 · 스태거(무력화) · 가드파쇄
    전투 자원 — 청명도 · 영로 · 영로화경 / 동료 지원 게이지 · 공동 오의(쌍안연화 · 녹기쌍룡 · 대지개화 · 삼라만화)
    수치는 data/config.js의 combat · resource · support · baekhwa */
@@ -49,7 +49,7 @@ function updateGuard(dt){P.parryT-=dt;P.parryCd-=dt;P.guardBroken-=dt;P.parrySea
 function srcFront(src){if(!src||src.x===undefined)return true;const a=Math.atan2(src.x-P.x,src.z-P.z);return Math.abs(angDiff(a,P.ang))<=100*DEG;}
 function guardBreak(type){P.guarding=false;P.guardBroken=CONFIG.combat.guardBreakStun+0.4;popNum(P.x,2.7,P.z,type==='grab'?'잡기 — 가드 불가':'가드파쇄!','hurt');burst(P.x,1.3,P.z,0x8a1f9a,14,6,0.4);}
 const COUNTER_NAME={brush:'묵막 패링 — 슈아 반격',sword:'역린의 검무 : 녹각공명',yeonha:'공명 패링 — 슈아 반격',maehyang:'침술 패링 — 슈아 반격'};
-function parrySuccess(src,type){const C=CONFIG.combat;P.parryT=0;P.parryCd=0;P.iframe=Math.max(P.iframe,0.3);stats.parries++;hitstop=0.14;shake(0.35);
+function parrySuccess(src,type){const C=CONFIG.combat;if(src&&src.onParry)src.onParry(src);P.parryT=0;P.parryCd=0;P.iframe=Math.max(P.iframe,0.3);stats.parries++;hitstop=0.14;shake(0.35);
   addClarity(CONFIG.resource.clarityParry);addYr(CONFIG.resource.yrParry);supGain(CONFIG.support.parry);skillName(COUNTER_NAME[P.mode]);
   const dmg=P.mode==='sword'?26:16;
   for(const e of targetsInArc(P.x,P.z,P.ang,3.8,PI)){const r=pdmg(dmg);if(!dealE(e,r.v,r.crit,'counter',{stg:C.parryStagger}))continue;if(e.dead)continue;
@@ -103,7 +103,7 @@ function groggy(e){const C=CONFIG.combat,isB=e.type==='boss';e.groggy=isB?C.grog
   if(isB){e.action=null;cancelStrikes(e);e.stance=0;e.pulling=0;e.armorT=0;banner('무력화! '+BOSSES[e.id].name+' — '+C.groggyTime+'초간 받는 피해 '+C.groggyDamageMul+'배',2.6,'big');hitstop=0.15;shake(0.4);}
   popNum(e.x,3,e.z,'무력화','info');burst(e.x,1.5,e.z,0xf2d36b,16,6,0.4);supGain(CONFIG.support.groggy);addClarity(CONFIG.resource.clarityGroggy);}
 function updateEnemyCombat(e,dt){if(e.groggy>0){e.groggy-=dt;if(e.groggy<=0){e.stg=e.stgMax;e.barDirty=true;}}if(e.armorT>0)e.armorT-=dt;if(e.samra>0)e.samra-=dt;}
-function breakBarrier(b){if(!b||b.dead)return false;if(b.runeActive&&runes.length){breakRunes();return true;}if(b.barrier){bjBreakBarrier(b);return true;}return false;}
+function breakBarrier(b){if(!b||b.dead)return false;if(b.runeActive&&runes.length){breakRunes();return true;}if(b.barrier){if(b.id==='baekjin')bjBreakBarrier(b);else if(BOSS_BREAK[b.id])BOSS_BREAK[b.id](b);else bossShatter(b,BOSSES[b.id].brokenStun||5,'결계 파쇄');return true;}return false;}
 
 /* ---------- 공동 오의 ---------- */
 function canJoint(k){if(!PARTY||!state.running||P.dead||P.char!=='yeonwoo')return false;const S=PARTY.sup;
@@ -113,7 +113,7 @@ function canJoint(k){if(!PARTY||!state.running||P.dead||P.char!=='yeonwoo')retur
 function jointWhyNot(k){if(P.char!=='yeonwoo')return '공동 오의는 연우를 조작할 때만 쓸 수 있습니다';
   if(k==='all'){if(PARTY.samraUsed)return '삼라만화는 전투당 1회';if(!(P.baek>=75||P.hwag||P.nokgi>0))return '침식도 3단계 이상 필요';return '연하 · 매향 지원 게이지 모두 가득 필요';}
   return (k==='yeonha'?'연하':'매향')+' 지원 게이지가 가득 차야 합니다';}
-function tryJoint(k){if(!state.running||state.paused||state.mapOpen||dialogOpen||P.dead||state.win)return false;
+function tryJoint(k){if(!state.running||state.paused||state.mapOpen||dialogOpen||P.dead||state.win)return false;if(P.seal>0){popNum(P.x,2.6,P.z,'봉인 — '+(P.sealName||'단절'),'immune');return false;}
   if(P.act&&P.act.name==='ult'){return false;}
   if(!canJoint(k)){popNum(P.x,2.6,P.z,jointWhyNot(k),'info');flashBtn(k==='yeonha'?'j1':k==='mae'?'j2':'j3');return false;}
   P.act=null;P.queue=null;P.guarding=false;stats.joints++;
@@ -148,7 +148,7 @@ function jointSamra(){P.invuln=3.2;showCut('삼라만화 : 개화');const cx=P.x
   P.act={name:'ult',t:0,dur:3.0,cancel:false,events:[
     {at:0.1,fn(){skillName('연하 — 관측과 차원 둔화');for(const e of enemies){if(e.dead)continue;e.stun=Math.max(e.stun,3.2);if(e.type==='boss'){e.action=null;cancelStrikes(e);}}
       while(strikes.length)removeStrike(strikes.length-1);ringFx(P.x,P.z,1,16,0x4a8fe0,0.8,0.2,0.8);state.slowT=0.6;}},
-    {at:1.0,fn(){skillName('매향 — 대지 침술과 생기 구속');needleRing(cx,cz,7);for(const e of enemies){if(e.dead||e.type==='boss'||e.type==='arcrune')continue;e.pull={x:cx,z:cz,t:0.6};}
+    {at:1.0,fn(){skillName('매향 — 대지 침술과 생기 구속');needleRing(cx,cz,7);for(const e of enemies){if(e.dead||e.type==='boss'||isRune(e))continue;e.pull={x:cx,z:cz,t:0.6};}
       for(const p of puddles)p.t=Math.min(p.t,0.2);waves.forEach(w=>{scene.remove(w.m);});waves.length=0;if(typeof clearCjRings==='function')clearCjRings();}},
     {at:2.0,fn(){skillName('연우 — 만묵형상 멸쇄 참격');mandalaFx(cx,cz);}},
     {at:2.6,fn(){for(const e of enemies){if(e.dead)continue;if(e.type==='boss'){e.shield=0;breakBarrier(e);}

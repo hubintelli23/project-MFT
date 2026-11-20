@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/player.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/player.js · v1.0
    연우의 행동 · 스킬 · 전환 · 점프 · 궁극기 */
 'use strict';
 /* ================= 플레이어 수치 ================= */
@@ -11,10 +11,10 @@ function addBaek(v){P.baek=Math.min(100,P.baek+v);}
 function inPuddle(){if(P.taintImmune>0)return false;for(const p of puddles)if(Math.hypot(P.x-p.x,P.z-p.z)<p.r)return true;return false;}
 function inZone(x,z){for(const zn of zones)if(Math.hypot(x-zn.x,z-zn.z)<zn.r)return true;return false;}
 
-function mark(e,n){if(e.dead||e.type==='arcrune')return;if(e.type==='boss'&&e.runeActive){if(state.time-(e.washT||0)>1.5){e.washT=state.time;popNum(e.x,2.8,e.z,'낙인이 물에 씻겨나감','immune');}return;}
+function mark(e,n){if(e.dead||isRune(e))return;if(e.type==='boss'&&e.runeActive){if(state.time-(e.washT||0)>1.5){e.washT=state.time;popNum(e.x,2.8,e.z,'낙인이 물에 씻겨나감','immune');}return;}
   e.stacks=Math.min(5,e.stacks+n);e.stackT=9;e.barDirty=true;burst(e.x,(e.y||0)+1,e.z,0x141414,3,3,0.3,0.4);
   if(e.stacks>=3&&!flags.t3&&P.mode==='brush'){flags.t3=1;banner('낙인 3중첩! 【전환】으로 검 모드 → 검으로 베어 개화시키세요',4);}}
-function bloom(e,count,mult=1){if(count<=0||e.dead||e.type==='arcrune')return;count=Math.min(count,e.stacks);if(count<=0)return;e.stacks-=count;e.barDirty=true;
+function bloom(e,count,mult=1){if(count<=0||e.dead||isRune(e))return;count=Math.min(count,e.stacks);if(count<=0)return;e.stacks-=count;e.barDirty=true;
   let base=count*11*mult*(P.maeBuff>0?1.5:1);if(inFog(e)){base*=0.5;if(!flags.fog){flags.fog=1;banner('묵식귀의 탁기 안개 — 안개 속 적은 정화 피해 50% 감소! 묵식귀부터 베세요',3.5);}}
   const r=pdmg(base);dealE(e,r.v,r.crit,'bloom');
   const ex=e.x,ey=(e.y||0)+1,ez=e.z;
@@ -27,11 +27,12 @@ function bloom(e,count,mult=1){if(count<=0||e.dead||e.type==='arcrune')return;co
   if(!flags.bloom){flags.bloom=1;banner('개화! 낙인을 터뜨리면 방어막 · 영로 · 청명도 · 침식도가 찹니다',3.2);}}
 const BLOCKABLE={melee:1,ranged:1,skill:1,dash:1,tag:1,switch:1,clone:1,bloom:1};
 function dealE(e,v,crit,src,extra){if(e.dead)return false;const pierce=extra&&extra.pierce,gb=extra&&extra.gb;
-  if(e.type==='arcrune'){if(!gb&&!pierce){if(state.time-(e.noT||0)>0.8){e.noT=state.time;popNum(e.x,2.6,e.z,'가드파쇄 공격만 통함','immune');}return false;}
-    e.hp-=1;e.flash=0.1;e.barDirty=true;burst(e.x,1.5,e.z,0xf2d36b,12,6,0.4);popNum(e.x,2.6,e.z,'아크 룬 균열 '+(e.maxHp-e.hp)+'/'+e.maxHp,'info');if(e.hp<=0)killE(e);return true;}
+  if(isRune(e))return runeHit(e,src,extra);
+  if(e.onHitE){const r=e.onHitE(e,src,extra);if(r===false)return false;}
   if(e.type==='boss'){const BD=BOSSES[e.id];
     if(e.invulnT>0||e.intro){popNum(e.x,2.6,e.z,'무효','immune');return false;}
-    if(e.barrier&&!pierce){if(state.time-(e.absT||0)>0.5){e.absT=state.time;popNum(e.x,2.8,e.z,'아크 방어막 — 무적','immune');}return false;}
+    if(BOSS_HIT[e.id]){const r=BOSS_HIT[e.id](e,v,src,extra);if(r===false)return false;if(typeof r==='number')v=r;}
+    if(e.barrier&&!pierce){if(state.time-(e.absT||0)>0.5){e.absT=state.time;popNum(e.x,2.8,e.z,(e.barrierName||'방어막')+' — 무적','immune');}return false;}
     if(e.stance>0&&src==='melee'){bossCounter(e);return false;}
     if(e.guardFront&&e.guardDown<=0&&!gb&&!pierce&&BLOCKABLE[src]&&bossFacingP(e,BD.guardAngle||75)){bossBlocked(e);return false;}
     if(gb&&e.guardFront&&e.guardDown<=0){e.guardDown=BD.guardDownTime||3;popNum(e.x,3,e.z,'방패 파쇄!','info');burst(e.x,1.6,e.z,0xe8edf2,16,7,0.45);}
@@ -46,13 +47,14 @@ function dealE(e,v,crit,src,extra){if(e.dead)return false;const pierce=extra&&ex
   popNum(e.x,(e.y||0)+1.6+rand(0,0.5),e.z,v,crit?'crit':'');
   staggerHit(e,v,extra);
   if(e.hp<=0)killE(e);return true;}
-function killE(e,self){e.dead=true;e.hp=0;if(e.type!=='arcrune'){stats.kills++;addClarity(CONFIG.resource.clarityKill);addYr(CONFIG.resource.yrKill);}if(e.vulnM){scene.remove(e.vulnM);}
+function killE(e,self){e.dead=true;e.hp=0;if(!isRune(e)){stats.kills++;addClarity(CONFIG.resource.clarityKill);addYr(CONFIG.resource.yrKill);}if(e.vulnM){scene.remove(e.vulnM);}
   if(e.bar){scene.remove(e.bar.s);e.bar.tex.dispose();e.bar.s.material.dispose();e.bar=null;}
   if(e.rootM){scene.remove(e.rootM);}
   if(e.fog){scene.remove(e.fog);e.fog=null;}
   if(e.type==='rusher')addPuddle(e.x,e.z);
   if(e.type==='boss'){bossDefeated(e);return;}
-  if(e.type==='arcrune'){e.dying=0.4;bjRuneDestroyed(e);return;}
+  if(isRune(e)){e.dying=0.4;if(e.onBreak&&boss&&!boss.dead)e.onBreak(e);return;}
+  if(e.onDeath)e.onDeath(e);
   e.dying=0.4;if(!self)maybeDrop(e);
   if(!self){burst(e.x,(e.y||0)+0.8,e.z,0x141414,14,6,0.5);burst(e.x,(e.y||0)+0.8,e.z,0x6fe0b8,10,5,0.4);purify(e.x,e.z,1.8);}}
 
@@ -147,7 +149,7 @@ function makmuk(){P.iframe=0.5;shootBigeom();skillName('막묵 결계');
     P.shield=P.maxShield;P.rangeBuff=8;ringFx(P.x,P.z,1,7,0x3fae8c,0.7,0.08,0.9);ringFx(P.x,P.z,1,6.5,0x141414,0.6);for(let i=0;i<6;i++)purify(P.x+rand(-4,4),P.z+rand(-4,4),1.6);hitstop=0.1;shake(0.3);}}]};}
 /* 붓 ↔ 검 전환 (v0.9): 전환 자체는 공격 판정이 없는 짧은 동작. 전환 직후 첫 공격이 '연계기'가 됩니다.
    붓→검 연계: 추사 정화(연계 게이지 FULL: 진명 정화) / 검→붓 연계: 화묵이탈(FULL: 막묵 결계) */
-function doSwitch(){if(P.cds.sw>0||P.char!=='yeonwoo')return false;const from=P.mode;P.mode=from==='brush'?'sword':'brush';
+function doSwitch(){if(P.cds.sw>0||P.char!=='yeonwoo')return false;if(state.lockSwT>0){popNum(P.x,2.6,P.z,'전환 봉인','immune');return false;}state.lastSwT=state.time;const from=P.mode;P.mode=from==='brush'?'sword':'brush';
   P.link={from,t:1.3,full:P.sw>=100};P.cds.sw=0.35;brushW.visible=P.mode==='brush';swordW.visible=P.mode==='sword';P.lastIdx=-1;P.comboT=0;stats.switches++;
   P.act={name:'switch',t:0,dur:0.18,cancel:false};ringFx(P.x,P.z,0.3,1.3,P.mode==='brush'?0x141414:0xe8fff4,0.25,0.9);
   popNum(P.x,2.5,P.z,(P.mode==='sword'?'검':'붓')+' — 연계 준비'+(P.link.full?' (강화)':''),'info');
