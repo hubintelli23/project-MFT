@@ -1,10 +1,10 @@
-/* MFT 블루잉크 : 천년청묵 · js/party.js · v0.8
+/* MFT 블루잉크 : 천년청묵 · js/party.js · v0.9
    교대 시스템 — 연우 · 연하 · 매향 (1·2·3 교대, 교대 진입 공격, 쓰러지면 자동 교대, 지원 개입)
    연하·매향의 전투 기술 · 매화 진. 수치는 data/skills.js · data/characters.js · data/config.js */
 'use strict';
 const PARTY_ORDER=['yeonwoo','yeonha','maehyang'];
 let PARTY=null;
-function newParty(){const p={critNext:false};for(const id of PARTY_ORDER){const C=CHARACTERS[id];p[id]={hp:C.hp,maxHp:C.hp,ult:0,mode:'brush'};}return p;}
+function newParty(){const p={critNext:false,sup:{yeonha:0,maehyang:0},samraUsed:false};for(const id of PARTY_ORDER){const C=CHARACTERS[id];p[id]={hp:C.hp,maxHp:C.hp,ult:0,mode:'brush'};}return p;}
 
 const MESH={yeonwoo:pMesh,yeonha:AVATARS.yeonha(),maehyang:AVATARS.maehyang()};for(const k of['yeonha','maehyang']){MESH[k].visible=false;scene.add(MESH[k]);}
 let PM=pMesh;
@@ -63,7 +63,7 @@ function updateFields(dt){for(let i=fields.length-1;i>=0;i--){const f=fields[i];
 function clearParty(){while(fields.length)removeField(fields.length-1);for(const id in cameos)delete cameos[id];for(const k of PARTY_ORDER){MESH[k].visible=k==='yeonwoo';MESH[k].rotation.set(0,0,0);}PM=pMesh;}
 
 /* ---------- 연하 · 매향 스킬 (Q · E) ---------- */
-function partySkill(k){const id=skillId(k);if(P.cds[id]>0)return false;
+function partySkill(k){const id=skillId(k);if(P.cds[id]>0||P.yr<skillCost(id))return false;P.yr-=skillCost(id);if(P.swayCtr>0){P.swayCtr=0;P.swayBoost=0.9;}
   ({h1:hJeogan,h2:hCheongan,m1:mHyeolmaek,m2:mChakgeun})[id]();P.cds[id]=CD[id];P.lastIdx=-1;return true;}
 /* 연하 Q 『적안 · 경고의 음』 — 주변 적 기절 */
 function hJeogan(){skillName('적안 · 경고의 음');P.act={name:'cast',t:0,dur:0.45,cancel:false,events:[{at:0.2,fn(){
@@ -87,27 +87,30 @@ function mChakgeun(){faceTarget(8);const a=P.ang,half=45*DEG;skillName('생기 �
   for(const e of targetsInArc(P.x,P.z,a,6,half)){const r=pdmg(10);if(dealE(e,r.v,r.crit,'skill')&&!e.dead&&e.stacks)bloom(e,e.stacks,1.2);}
   spawnField(cx,cz,2.2,8);shake(0.2);}}]};}
 
-/* ---------- 연하 · 매향 궁극기 (R) ---------- */
+/* ---------- 연하 · 매향 궁극기 (R) — v0.9: 공동 오의(Z · X · V)와 구분되는 개인 궁극기 ---------- */
 function partyUlt(){P.invuln=1.6;if(P.char==='yeonha'){
-  showCut('쌍안연화 : 적청인과록');const cx=P.x+Math.sin(P.ang)*3,cz=P.z+Math.cos(P.ang)*3;
-  P.act={name:'ult',t:0,dur:1.3,cancel:false,events:[{at:0.3,fn(){ringFx(cx,cz,1,12,0xe0405a,0.9,0.1,0.9);ringFx(cx,cz,1,11,0x4a8fe0,1.0,0.15,0.9);vortexFx(cx,cz,8);}},
-    {at:1.0,fn(){for(const e of enemies){if(e.dead||Math.hypot(e.x-cx,e.z-cz)>12)continue;const r=pdmg(20);if(!dealE(e,r.v,r.crit,'ult')||e.dead)continue;
-      if(e.type!=='boss'){e.pull={x:cx,z:cz,t:0.5};e.root=Math.max(e.root,3);}else e.slow=Math.max(e.slow||0,3);mark(e,5);}
-      PARTY.critNext=true;hitstop=0.2;shake(0.5);banner('적청인과록 — 연우 검 모드 첫 참격 치명타 100%',3.5);}}]};}
-  else{showCut('만화정계 : 대지개화');
-    P.act={name:'ult',t:0,dur:1.4,cancel:false,events:[{at:0.3,fn(){needleRing(P.x,P.z,8);}},{at:1.0,fn(){
-      for(const p of puddles)p.t=Math.min(p.t,0.3);for(let i=0;i<3;i++){const a=P.ang+i*TAU/3;spawnField(P.x+Math.sin(a)*3,P.z+Math.cos(a)*3,2.4,12);}
-      P.maeBuff=10;P.hp=Math.min(P.maxHp,P.hp+P.maxHp*0.2);for(const id of PARTY_ORDER){if(id!==P.char&&PARTY[id].hp>0)PARTY[id].hp=Math.min(PARTY[id].maxHp,PARTY[id].hp+PARTY[id].maxHp*0.2);}
-      for(const e of enemies){if(e.dead||dist2(P,e)>10)continue;const r=pdmg(18);if(dealE(e,r.v,r.crit,'ult')&&!e.dead&&e.stacks)bloom(e,e.stacks,1.5);}
-      ringFx(P.x,P.z,1,12,0x6fe0b8,0.9,0.1,0.9);burst(P.x,1.5,P.z,0xf4c4d2,30,8,0.5,1);hitstop=0.2;shake(0.5);
-      banner('대지개화 — 10초간 파티 전원 치명타 100% · 개화 피해 1.5배 · 탁기 장판 소멸',3.5);}}]};}
+  /* 연하 『쌍안 · 시공 정지』 — 오드아이 개안, 주변 적의 시간을 멈춤 */
+  showCut('쌍안 · 시공 정지');
+  P.act={name:'ult',t:0,dur:1.2,cancel:false,events:[{at:0.3,fn(){ringFx(P.x,P.z,1,11,0xe0405a,0.8,0.1,0.9);ringFx(P.x,P.z,1,10,0x4a8fe0,0.9,0.15,0.9);}},
+    {at:0.8,fn(){state.slowT=0.5;for(const e of enemies){if(e.dead||dist2(P,e)>11)continue;const r=pdmg(18);if(!dealE(e,r.v,r.crit,'ult',GB)||e.dead)continue;e.vuln=Math.max(e.vuln||0,6);
+      if(e.type==='boss'){if(e.barrier||e.runeActive)e.slow=Math.max(e.slow||0,4);else{e.action=null;cancelStrikes(e);e.stun=Math.max(e.stun,1.8);}}else e.stun=Math.max(e.stun,3.5);}
+      hitstop=0.2;shake(0.4);banner('시공 정지 — 주변 적 정지 · 6초간 받는 피해 +30%',3);}}]};}
+  else{
+  /* 매향 『매령 회생진』 — 생명의 순환: 쓰러진 동료 부활 · 파티 회복 */
+  showCut('매령 회생진');
+  P.act={name:'ult',t:0,dur:1.4,cancel:false,events:[{at:0.3,fn(){needleRing(P.x,P.z,6);}},{at:1.0,fn(){let rev=0;
+    for(const id of PARTY_ORDER){if(id===P.char)continue;const m=PARTY[id];if(m.hp<=0){m.hp=m.maxHp*0.5;rev++;}else m.hp=Math.min(m.maxHp,m.hp+m.maxHp*0.35);}
+    P.hp=Math.min(P.maxHp,P.hp+P.maxHp*0.35);addShield(20);for(const p of puddles)p.t=Math.min(p.t,0.3);for(let i=0;i<2;i++){const a=P.ang+i*PI;spawnField(P.x+Math.sin(a)*2.5,P.z+Math.cos(a)*2.5,2.4,12);}
+    ringFx(P.x,P.z,1,10,0x6fe0b8,0.9,0.1,0.9);burst(P.x,1.5,P.z,0xf8f4f0,30,7,0.5,1);hitstop=0.15;
+    banner('매령 회생진 — 파티 체력 +35%'+(rev?' · 쓰러진 동료 '+rev+'명 부활':'')+' · 장판 정화',3.5);}}]};}
   return true;}
 
 /* ---------- 파티 HUD ---------- */
 (function buildPartyHud(){const box=$('party');box.innerHTML=PARTY_ORDER.map((id,i)=>{const C=CHARACTERS[id];
-  return `<div class="ps" data-i="${i}" style="--c:#${C.color.toString(16).padStart(6,'0')}"><b>${i+1}</b><span class="pn">${C.name}<small>${C.role}</small></span><div class="pb"><div></div></div><i class="pu"></i></div>`;}).join('');
+  return `<div class="ps" data-i="${i}" style="--c:#${C.color.toString(16).padStart(6,'0')}"><b>${i+1}</b><span class="pn">${C.name}<small>${C.role}</small></span><div class="pb"><div></div></div>${id==='yeonwoo'?'':'<div class="sb"><div></div></div>'}<i class="pu"></i>${id==='yeonha'?'<em class="jk">Z</em>':id==='maehyang'?'<em class="jk">X</em>':''}</div>`;}).join('');
   box.querySelectorAll('.ps').forEach(el=>el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();trySwap(+el.dataset.i);}));})();
 function updatePartyHud(){if(!PARTY)return;const els=$('party').children;PARTY_ORDER.forEach((id,i)=>{const el=els[i],m=id===P.char?{hp:P.hp,maxHp:P.maxHp,ult:P.ult}:PARTY[id];
   setC2x(el,'on',id===P.char);setC2x(el,'ko',m.hp<=0);setC2x(el,'ult',m.ult>=100);setC2x(el,'cd',id!==P.char&&P.cds.swap>0);
-  const w=(Math.max(0,m.hp)/m.maxHp*100).toFixed(0)+'%';const bar=el.querySelector('.pb>div');if(bar._w!==w){bar._w=w;bar.style.width=w;}});}
+  const w=(Math.max(0,m.hp)/m.maxHp*100).toFixed(0)+'%';const bar=el.querySelector('.pb>div');if(bar._w!==w){bar._w=w;bar.style.width=w;}
+  if(id!=='yeonwoo'){const sv=PARTY.sup[id],sw=sv.toFixed(0)+'%',sb=el.querySelector('.sb>div');if(sb._w!==sw){sb._w=sw;sb.style.width=sw;}setC2x(el,'sup',sv>=100);}});}
 function setC2x(el,c,on){const k='_'+c;if(el[k]===on)return;el[k]=on;el.classList.toggle(c,on);}
