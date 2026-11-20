@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/bosses/cheonjehyeok.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/bosses/cheonjehyeok.js · v1.0
    보스: 천제혁 — 마교 교주 · 역천의 패왕 (구해 마궁)
    체험 요소: 가드 불가(흑운 가르기 · 역천 잡기 → 스웨이), 가드 · 패링 가능(탁류 파쇄), 강체 대형 참격(구해 흑룡 참격 → 가드파쇄로 끊기),
              탁기 강제 침식(침식도 상승 · 청명도 감소 · 패링 봉인), 흑염 장판(매향 정화 · 검 패링 녹각공명으로 정화),
@@ -21,7 +21,9 @@ function cjGrab(b,dt0=0){return[dt0,()=>{faceP(b);const d=dist2(P,b);if(d>2.2){c
     onHitP:()=>{P.stagger=1.0;P.baek=Math.min(100,P.baek+10);},onFire:o=>{burst(o.x+Math.sin(o.ang)*1.4,1.2,o.z+Math.cos(o.ang)*1.4,0x141414,12,5,0.4);}});}];}
 function cjDragon(b,dt0=0){return[dt0,()=>{faceP(b);b.armorT=1.15;strike({owner:b,kind:'line',x:b.x,z:b.z,ang:b.ang,len:11,w:4.2,tell:1.05,dmg:CJD().damage.dragon,type:'heavy',onHitP:cjOnErode,
   onFire:o=>{lineFx(o.x,o.z,o.ang,o.len,4.2,0x141414,0.6,1.2);for(let k=1;k<6;k++)burst(o.x+Math.sin(o.ang)*k*2,1.5,o.z+Math.cos(o.ang)*k*2,0x5a0a10,8,7,0.5);shake(0.6);if(b.p2)addFlame(o.x+Math.sin(o.ang)*6,o.z+Math.cos(o.ang)*6,2,8);}});}];}
-function cjRing(b,dt0=0){return[dt0,()=>{const m=new T.Mesh(flatGeo(new T.RingGeometry(0.88,1,64)),MB(0xff5a2a,0.8));m.position.set(b.x,0.12,b.z);scene.add(m);cjRings.push({x:b.x,z:b.z,R:0.6,m,hit:false});ringFx(b.x,b.z,0.5,2.5,0xd07a1a,0.4);}];}
+/* 퍼지는 고리(스웨이 불가) — 다른 보스도 사용: spawnRing(x,z,{dmg,col,sp,max,onHitP}) */
+function spawnRing(x,z,o={}){const m=new T.Mesh(flatGeo(new T.RingGeometry(0.88,1,64)),MB(o.col||0xff5a2a,0.8));m.position.set(x,0.12,z);scene.add(m);cjRings.push({x,z,R:0.6,m,hit:false,dmg:o.dmg,sp:o.sp||8,max:o.max||13,onHitP:o.onHitP});ringFx(x,z,0.5,2.5,o.col||0xd07a1a,0.4);}
+function cjRing(b,dt0=0){return[dt0,()=>{spawnRing(b.x,b.z,{dmg:CJD().damage.ring});}];}
 function cjSingle(b,kind){const f={cleave:cjCleave,wave:cjWave,grab:cjGrab,dragon:cjDragon,ring:cjRing}[kind];bAct(b,kind,kind==='dragon'?1.8:kind==='ring'?1.0:1.2,[f(b)]);
   bossCall({cleave:'흑운 가르기 — 가드 불가',wave:'탁류 파쇄',grab:'역천 잡기 — 가드 불가',dragon:'구해 흑룡 참격 — 강체',ring:'흑염 파동 — 스웨이 불가'}[kind]);if(kind==='ring'&&!flags.cjRing){flags.cjRing=1;banner('흑염 파동 — 회피 무적으로 못 피합니다. 가드하거나 점프로 넘으세요',3.5);}}
 function cjCombo(b){bAct(b,'combo',4.6,[cjCleave(b,0),cjWave(b,0.95),cjGrab(b,1.9),cjDragon(b,2.8)]);bossCall('역천 4연격');}
@@ -37,9 +39,9 @@ function cjPhase3(b){b.p3=true;b.invulnT=1.6;cancelStrikes(b);b.lethalT=10;showC
     banner('매향의 대지 은침 — 폭주 진정 (청명도 회복 · 감소 속도 정상)',3);}});}
 function cjChoose(b,d){const opts=d>6?[['wave',2],['grab',1.6],['dragon',1.2]]:[['cleave',3],['grab',2],['dragon',1.4],['combo',1.6],['wave',1]];if(b.p2)opts.push(['ring',1.5]);
   const pick=pickWeighted(b,opts);if(pick==='combo')cjCombo(b);else cjSingle(b,pick);}
-function updateCjRings(dt){for(let i=cjRings.length-1;i>=0;i--){const w=cjRings[i];w.R+=8*dt;w.m.scale.setScalar(w.R);w.m.material.opacity=0.8*(1-w.R/13);
-  if(!w.hit&&Math.abs(Math.hypot(P.x-w.x,P.z-w.z)-w.R)<0.6&&P.y<0.8&&!P.dead){w.hit=true;hurtPlayer(CJD().damage.ring,{type:'unsway',src:{x:w.x,z:w.z}});}
-  if(w.R>13){scene.remove(w.m);w.m.material.dispose();cjRings.splice(i,1);}}}
+function updateCjRings(dt){for(let i=cjRings.length-1;i>=0;i--){const w=cjRings[i];w.R+=w.sp*dt;w.m.scale.setScalar(w.R);w.m.material.opacity=0.8*(1-w.R/w.max);
+  if(!w.hit&&Math.abs(Math.hypot(P.x-w.x,P.z-w.z)-w.R)<0.6&&P.y<0.8&&!P.dead){w.hit=true;hurtPlayer(w.dmg||CJD().damage.ring,{type:'unsway',src:{x:w.x,z:w.z},onHit:w.onHitP});}
+  if(w.R>w.max){scene.remove(w.m);w.m.material.dispose();cjRings.splice(i,1);}}}
 function clearCjRings(){for(const w of cjRings){scene.remove(w.m);w.m.material.dispose();}cjRings.length=0;}
 BOSS_AI.cheonjehyeok=function(b,dt){const D=CJD();
   if(bossCommon(b,dt))return;

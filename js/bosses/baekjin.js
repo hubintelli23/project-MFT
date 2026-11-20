@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/bosses/baekjin.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/bosses/baekjin.js · v1.0
    보스: 백진 — 백련 가주 · 강철과 성벽의 아크 군주 (설백산)
    체험 요소: 정면 방패 가드(가드파쇄 · 측후방 공격), 성기 게이지, 강체(금빛) → 가드파쇄로 깨기, 스태거 무력화,
              가드 불가 돌진(스웨이), 성기사 아크 룬(무적 방어막 — 가드파쇄로 룬 파괴 또는 녹기현경 · 녹기쌍룡 · 삼라만화로 즉시 파쇄)
@@ -36,7 +36,7 @@ function bjRunePhase(b){b.barrier=true;b.runeDone=false;cancelStrikes(b);b.actio
     [1.3,()=>banner('아크 방어막 — 백진 무적! 가드파쇄 공격으로 룬 4개를 부수거나 녹기현경 · 녹기쌍룡(Z, 검) · 삼라만화(V)로 즉시 파쇄',6,'big')]]);}
 function bjRuneDestroyed(r){const b=boss;if(!b||b.id!=='baekjin'||b.dead)return;b.runeCount--;ringFx(r.x,r.z,0.5,3,0xf2d36b,0.5);burst(r.x,1.6,r.z,0xf2d36b,20,7,0.45);
   if(b.runeCount<=0&&b.barrier)bjBreakBarrier(b);else popNum(b.x,3.2,b.z,'아크 룬 남은 수 '+b.runeCount,'info');}
-function bjBreakBarrier(b){const D=BJD();b.barrier=false;b.runeDone=true;for(const e of enemies)if(e.type==='arcrune'&&!e.dead){e.dead=true;e.dying=0.4;if(e.bar){scene.remove(e.bar.s);e.bar=null;}}
+function bjBreakBarrier(b){const D=BJD();b.barrier=false;b.runeDone=true;for(const e of enemies)if(isRune(e)&&!e.dead){e.dead=true;e.dying=0.4;if(e.bar){scene.remove(e.bar.s);e.bar=null;}}
   b.stun=D.brokenStun;b.broken=D.brokenStun+1;b.action=null;cancelStrikes(b);b.guardDown=D.brokenStun;b.armorT=0;stats.runeBreak=1;
   showCut('파회 — 아크 방어막 붕괴');hitstop=0.25;shake(0.7);banner('백진 긴 기절! 받는 피해 '+D.brokenDamageMul+'배 · 방패 해제',4,'big');spawnItem('yeongro',b.x+1.8,b.z);}
 BOSS_AI.baekjin=function(b,dt){const D=BJD();
@@ -44,7 +44,7 @@ BOSS_AI.baekjin=function(b,dt){const D=BJD();
   if(bossCommon(b,dt))return;
   if(!b.action&&!b.p2&&b.hp<=b.maxHp*D.phase2At){bjPhase2(b);return;}
   if(!b.action&&!b.runeDone&&!b.barrier&&b.hp<=b.maxHp*D.runePhaseAt){bjRunePhase(b);return;}
-  if(b.barrier){b.phantomT-=dt;if(b.phantomT<=0&&enemies.filter(e=>e.type==='phantom'&&!e.dead).length<4){b.phantomT=D.phantomInterval;const rs=enemies.filter(e=>e.type==='arcrune'&&!e.dead);
+  if(b.barrier){b.phantomT-=dt;if(b.phantomT<=0&&enemies.filter(e=>e.type==='phantom'&&!e.dead).length<4){b.phantomT=D.phantomInterval;const rs=enemies.filter(e=>isRune(e)&&!e.dead);
       const r=rs.length?rs[Math.floor(Math.random()*rs.length)]:{x:0,z:9};spawnPhantom(r.x*0.85,r.z*0.85);}}
   if(!b.action&&b.holy>=D.holyMax&&!b.barrier){bjHoly(b);return;}
   if(b.action){runBossAction(b,dt);return;}
