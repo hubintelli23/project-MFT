@@ -1,5 +1,5 @@
-/* MFT 블루잉크 : 천년청묵 · js/assets/weapons.js · v0.9
-   무기 — 연우의 붓·검, 연하의 피리, 매향의 침통, 청류의 수검, 백진의 검·방패, 천제혁의 참마도, 궁극기·녹기현경 검
+/* MFT 블루잉크 : 천년청묵 · js/assets/weapons.js · v1.1
+   무기 — 연우의 붓·검, 연하의 피리, 매향의 침통, 청류의 수검, 백진의 검·방패, 천제혁의 참마도, 자영 · 이겸 · 사현 · 월령의 무구, 궁극기·녹기현경 검
    무기를 바꾸려면 WEAPONS 목록의 만드는 함수를 고치거나 새 함수로 바꿔 끼웁니다.
    (모델 파일 .glb로 바꿀 때도 같은 이름의 함수가 3D 오브젝트를 돌려주면 됩니다) */
 'use strict';
@@ -32,4 +32,9 @@ const WEAPONS={
   baekjinShield:()=>makeShield(CHARACTERS.baekjin),      // 백진 : 성기사 방패
   cheonjehyeokBlade:()=>makeGreatBlade(CHARACTERS.cheonjehyeok), // 천제혁 : 염라혈명검(칠흑 참마도)
   phantomSword:()=>makeSword(1.3,0xe8f0fa,0x6a7a90),    // 기사 환영의 검
+  zayeongBlade:()=>makeSword(CHARACTERS.zayeong.swordLength,CHARACTERS.zayeong.swordColor,CHARACTERS.zayeong.swordGlow),   // 자영 : 봉황천우검
+  igyeomBlade:()=>makeGreatBlade(CHARACTERS.igyeom),    // 이겸 : 해태심판검(법도)
+  sahyeonDagger:()=>makeSword(CHARACTERS.sahyeon.swordLength,CHARACTERS.sahyeon.swordColor,CHARACTERS.sahyeon.swordGlow), // 사현 : 현무귀원검(쌍단검)
+  hayaBlade:()=>makeSword(1.2,0xcfe8ff,0x2a6ac0),    // 하야 : 청염 옥토도
+  wollyeongSword:()=>makeSword(CHARACTERS.wollyeong.swordLength,CHARACTERS.wollyeong.swordColor,CHARACTERS.wollyeong.swordGlow), // 월령 : 월백휘명검
 };

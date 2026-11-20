@@ -1,4 +1,4 @@
-/* MFT 블루잉크 : 천년청묵 · js/assets/background.js · v0.9
+/* MFT 블루잉크 : 천년청묵 · js/assets/background.js · v1.1
    배경 — 하늘·안개 색 · 조명 · 전투 지면 · 산 · 대나무 · 청매나무 · 떠다니는 먹 입자
    배경을 바꾸려면 이 파일만 수정하면 됩니다. (전투 구역 크기는 data/config.js의 arena) */
 'use strict';
@@ -37,6 +37,15 @@ const THEMES={
   cheongok:{sky:0xe9e3d5,ground:0xffffff,outer:0xd9d1bf},   // 청옥림
   seolbaek:{sky:0xeef2f6,ground:0xe9eff5,outer:0xe2e8ee},   // 설백산
   magung:{sky:0x8e837d,ground:0xa8968f,outer:0x6e625e},     // 구해 마궁
+  zaun:{sky:0xdccbe4,ground:0xe8ddf0,outer:0xb4a0c8},       // 자운곡 — 보랏빛 석양
+  cheonghoe:{sky:0xd4d7d2,ground:0xe6e4d2,outer:0xa8aca4},  // 청회원 — 안개 낀 고성
+  swamp:{sky:0xe8cfd4,ground:0xd6b4bc,outer:0x7e5a62},      // 연분홍 늪
+  wolgye:{sky:0x3a4660,ground:0x8892a8,outer:0x232c40},     // 월계 — 거대한 달 · 은백
+  simwon:{sky:0x5a6a70,ground:0x9aa8a8,outer:0x3a4448},    // 심원회 — 깊은 먹빛 심원
+  baekmyeong:{sky:0xf6f6f2,ground:0xffffff,outer:0x1a1a1a}, // 백명신궁 — 흰색과 검은색만 있는 공간
+  guya:{sky:0xd8a090,ground:0xe8c8b8,outer:0x5a1a14},       // 적염의 하늘
+  haya:{sky:0x2a3a58,ground:0x7a8aa8,outer:0x141c30},       // 청염의 달
+  baekya:{sky:0xe8e8e4,ground:0xf4f4f0,outer:0x0a0a0a},     // 백명 — 0계
 };
 function setTheme(id){const t=THEMES[id]||THEMES.cheongok;scene.background.setHex(t.sky);scene.fog.color.setHex(t.sky);ground.material.color.setHex(t.ground);outer.material.color.setHex(t.outer);}
 /* ---------- 매 프레임 배경 움직임 ---------- */
