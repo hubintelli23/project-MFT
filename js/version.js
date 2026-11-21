@@ -1,17 +1,17 @@
-/* MFT 블루잉크 : 천년청묵 · js/version.js · v1.1
+/* MFT 블루잉크 : 천년청묵 · js/version.js · v1.2
    게임 전체 버전과 파일별 버전 목록.
    파일을 고치면: 그 파일 첫 줄의 버전 + 아래 목록 + index.html의 ?v= 값을 함께 올려주세요. */
 'use strict';
-const GAME_VERSION='v1.1';
+const GAME_VERSION='v1.2';
 const FILE_VERSIONS={
-  'index.html':'v1.1',
+  'index.html':'v1.2',
   'css/style.css':'v1.1',
   'js/version.js':'v1.1',
   'data/config.js':'v0.9',
   'data/skills.js':'v0.9',
   'data/characters.js':'v1.1',
   'data/enemies.js':'v1.1',
-  'data/dialog.js':'v1.1',
+  'data/dialog.js':'v1.2',
   'data/story.js':'v1.1',
   'data/items.js':'v0.5',
   'js/core.js':'v0.8',

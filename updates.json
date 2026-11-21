@@ -1,8 +1,29 @@
 {
   "project": "MFT 블루잉크 : 천년청묵 — 전투 체험판",
-  "currentVersion": "v1.1",
+  "currentVersion": "v1.2",
   "rule": "새 버전을 만들 때마다 updates 맨 앞에 항목을 추가합니다. files.added = 새로 생긴 파일, files.changed = 내용이 바뀌어 버전이 올라간 파일, files.removed = 삭제된 파일",
   "updates": [
+    {
+      "version": "v1.2",
+      "date": "2026-11-21",
+      "title": "매향 · 연하 성격(말투) 맞바꿈",
+      "changes": [
+        "매향: 연우를 「오빠」라 부르는 반말 · 활달한 말투로 변경 (청류 · 천제혁 등장 대사, 개입, 폭주 저지, 백야 최종전, 교대 대사)",
+        "연하: 연우를 「도련님」이라 부르는 존댓말 · 차분한 말투로 변경 (생기 인화 구조, 룬 페이즈 조언, 월령전, 백야 최종전, 교대 대사)",
+        "매향 개입 대사 「오빠, 정신 차려! 다친 곳은 없어?」 · 연하 구조 대사 「도련님, 잠시 물러서십시오. 제가 처리하겠습니다.」"
+      ],
+      "files": {
+        "added": [],
+        "changed": [
+          "index.html",
+          "README.md",
+          "updates.json",
+          "data/dialog.js",
+          "js/version.js"
+        ],
+        "removed": []
+      }
+    },
     {
       "version": "v1.1",
       "date": "2026-11-20",
